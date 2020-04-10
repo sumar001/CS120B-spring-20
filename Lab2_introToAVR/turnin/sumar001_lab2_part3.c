@@ -13,40 +13,52 @@
 #endif
 
 int main(void) {
- DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
-	DDRC = 0xFF; PORTC = 0x00; // Configure port C's 8 pins as outputs
-				   //// Initialize output on PORTC to 0x00
-     unsigned char cntavail = 0x00; 
-     unsigned char park_zero = 0x00;
-     unsigned char park_first = 0x00;
-     unsigned char park_second= 0x00;
-     unsigned char park_third = 0x00;
+      // Insert DDR and PORT initializations
+	DDRA= 0x00; PORTA = 0XFF ;  //Configure PORT A's 8 pins as inputs
+	DDRC = 0xFF; PORTC = 0X00 ; //Configure PORT B's 8 pins as outputs, initialized to 0
 
-     while(1)
-	    {
-	      park_zero   = PINA & 0x01 ;
-	      park_first  = PINA & 0x02 ;
-	      park_second = PINA & 0x04 ;
-	      park_third  = PINA & 0x08 ;
+	unsigned char cntavail = 0x00;
+	unsigned char park_1   = 0x00;
+	unsigned char park_2   = 0x00;
+	unsigned char park_3   = 0x00;
+	unsigned char park_4   = 0x00;
 
-	     if(park_zero &  0x01) {
-		cntavail = cntavail + 1 ;
-	    }
-	if(park_first & 0x02) {
-		cntavail = cntavail + 1 ;
-	    }
-	if(park_second & 0x04) {
-		cntavail = cntavail + 1 ;
-	    }
-	if(park_third & 0x08) {
-		cntavail = cntavail + 1 ;
-	   }
-	if((park_zero == 0x01) && (park_first == 0x02) && (park_second == 0x04) && (park_third == 0x08))
-	    {
-		cntavail = 0xf0 ;
-	    }	
-	cntavail = park_zero + park_first + park_second + park_third ;
-	cntavail = 0x04 - cntavail ;
-	PORTC = cntavail;
-  }
+    // Insert your solution below 
+    while (1) {
+		//Read input
+		if( PINA & 0x01)
+		  {
+			park_1 = 1; }
+		else {
+			park_1 = 0; }
+
+		if( PINA & 0x02)
+		  {
+			park_2 = 1; }
+		else {
+			park_2 = 0; }
+
+		if( PINA & 0x04) 
+		  {
+			park_3 = 1; }
+		else {
+			park_3 = 0; }
+
+		if( PINA & 0x08) 
+		  {
+			park_4 = 1; }
+		else {
+			park_4 = 0; }
+		
+		cntavail = 4 - (park_1 + park_2 + park_3 + park_4);
+		
+		//Write Output
+		PORTC = cntavail;
+
+		if(cntavail == 0x00)
+		  {
+			PORTC = PORTC | 0X80 ;
+		  }		
+    }
+    return 1;
 }
