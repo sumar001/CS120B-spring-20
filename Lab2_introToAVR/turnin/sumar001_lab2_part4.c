@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *  Partner(s) Name: 
  *	Lab Section:
- *	Assignment: Lab #2  Exercise #4
+ *	Assignment: Lab #  Exercise #
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -10,41 +10,42 @@
 #include <avr/io.h>
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
+#include <stdlib.h>
 #endif
 
 int main(void) {
-DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
-	DDRB = 0x00; PORTB = 0XFF;
-        DDRC = 0xFF; PORTC = 0x00;
- 
-     unsigned char s_1;
-     unsigned char s_2;
-     unsigned char tmp_1;
-     unsigned char tmp_2;
-     unsigned char  i;
+    /* Insert DDR and PORT initializations */
+	DDRA = 0x00; PORTA = 0xFF;
+	DDRB = 0x00; PORTB = 0xFF;
+	DDRC = 0x00; PORTC = 0xFF;
+	DDRD = 0xFF; PORTD = 0x00;
 
-	 while(1)
-	    {
-		tmp_1 = PINA ;
-		  s_1 = 0x00 ;
-		  s_2 = 0x00 ;
-
-		for(i = 0x00 ; i < 8 ; ++i)
-		  {
-		    if(tmp_1 & 0x80) {
-			s_1 = s_1 + 1 ;
-		     }
-		   tmp_1 = tmp_1 << 1 ;
-		  }
-
-		tmp_2 = PINB ;
-		 for(i = 0x00 ; i < 8 ; ++i) {
-			if(tmp_2 & 0x80) {
-				s_2 = s_2 + 1 ;
-			   }
-			tmp_2 = tmp_2 << 1 ;
-		    }
-		PORTC = s_1 + s_2 ;
+        unsigned char seatA = 0x00;
+	unsigned char seatB = 0x00;
+	unsigned char seatC = 0x00;
+	unsigned short totalWeight = 0x0000;
+	unsigned char differenceWeight = 0x00;
+	unsigned char tempWeight = 0x00;
 	
-      	    }
-}
+    while(1)
+    {
+                seatA = PINA;
+		seatB = PINB;
+		seatC = PINC;
+		
+		totalWeight = seatA + seatB + seatC;
+		
+		if(abs((seatA - seatC)) >= 0x50)
+		{
+			differenceWeight = 0x02;
+		}
+		if(totalWeight >= 0x8C)
+		{
+			tempWeight = 0x01;
+		}		
+		PORTD = tempWeight | differenceWeight;
+		tempWeight = 0x00;
+		differenceWeight = 0x00;
+		totalWeight = 0x0000;
+    }
+}	
