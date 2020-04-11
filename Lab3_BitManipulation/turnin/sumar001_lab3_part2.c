@@ -92,8 +92,6 @@ int main(void) {
 
 
 		PORTC = light;
-		light = 0x00;
-		level = 0x00;		
 
     }
     return 1;
