@@ -1,4 +1,4 @@
-/*	Author: sumar001
+/*	Author: Saad Umar
  *  Partner(s) Name: 
  *	Lab Section: 25
  *	Assignment: Lab #3  Exercise #3
@@ -19,17 +19,12 @@ int main(void) {
 
 	unsigned char level = 0x00;
 	unsigned char light = 0x00;
-	unsigned char ignition = 0x00;
-	unsigned char if_seated = 0x00;
-	unsigned char seat_belt = 0x00;
+	unsigned char seat_belt = 0x00;	
 
-    /* Insert your solution below */
+  /* Insert your solution below */
     while (1) {
-	
-	 level = PINA ;
-	 ignition = PINA & 0x10;
-	 if_seated = PINA & 0x20;
-	 seat_belt = PINA & 0x40;
+         level = PINA & 0x0F ;
+	 seat_belt = PINA & 0x70;
 
 	 if((level & 0x00) == 0x00)
 	   {
@@ -96,12 +91,12 @@ int main(void) {
 	   {
 		light = 0x3F;
 	   }
-	if((ignition == 0x10) && (if_seated == 0x20) && (seat_belt != 0x40))
+	if(seat_belt == 0x30)
            {
-	 	light = 0xF0;
+	 	light += 0x80;
 	   } 
 		PORTC = light;
 
     }
-    return 1;
 }
+	
