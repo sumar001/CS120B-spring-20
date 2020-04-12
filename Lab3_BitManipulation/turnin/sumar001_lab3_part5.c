@@ -15,34 +15,31 @@
 int main(void) {
     /* Insert DDR and PORT initializations */
 	DDRD = 0x00; PORTD = 0xFF;
-	DDRB = 0xFF; PORTB = 0x00;
+	DDRB = 0xFE; PORTB = 0x01;
 
-	unsigned char weight = 0x00;
+	unsigned short weight = 0;
 	unsigned char airbag = 0x00;
-
+	unsigned char tmpB = 0x00;	
 
 
   /* Insert your solution below */
     while (1) {
 	
-	weight = PIND;
-	
-	if(weight >69)
-	 {
-	  airbag = 0x02;
-	 }
+    //calculate the weight
+		tmpB = PINB & 0x01;
+		weight = PIND << 1;
+		weight +=  tmpB;
 
-	if((weight > 5) && (weight < 70))
-	 {
-	  airbag = 0x04;
-	 }
-	if(weight < 5)
-	 {
-	   airbag = 0x00;
-	 }	
-
-	 PORTB = airbag;
-	 airbag = 0x00;
-	 weight = 0x00;	
-    }
-}
+		//determine the output
+		if(weight >= 70){
+			airbag = 0x02;
+		}
+		else if (weight > 5){
+			airbag = 0x04;
+		}
+		else{
+			airbag = 0x00;
+		}
+		
+		//output
+		PORTB = airbag;
