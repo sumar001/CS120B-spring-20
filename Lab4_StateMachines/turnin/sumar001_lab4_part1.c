@@ -14,72 +14,77 @@
 #include <stdlib.h>
 #endif
 
-enum States {Start, OFF, ON } state;
-	unsigned char B = 0x01;
-	unsigned char tmpA = 0x00;
+enum States{Start, led2_on, wait, led1_on} state;
 
-void Tick() {
+unsigned char input;
+unsigned char tmpB;
 
-	switch(state) { // Transitions
-		
+
+void led_System(){
+	switch(state){
 		case Start:
-			state = OFF;
-			break;
-
-		case OFF:
-			if(tmpA != 0x01) {
-				state = OFF;
-			 }
-			else {
-				state = ON;
+			if(input == 1){
+				state = led2_on;
 			}
+			else
+				state = Start;
 			break;
-
-		case ON:
-			if(tmpA == 0x01)
-			  {
-				state = OFF;
-			  }
-			else {
-				state = ON;
-			     }
+		
+		case led2_on:
+			if(input == 1){
+				state = led2_on;
+			}
+			else
+				state = wait;
 			break;
-
-
-		   default:
-			   state = OFF;
-	} // Transitions
-
-	switch(state) { // State actions
-   		
+		
+		case wait:
+			if(input == 1){
+				state = led1_on;
+			}
+			else
+				state = wait;
+			break;
+		
+		case led1_on:
+			if(input == 1){
+				state = led1_on;
+			}
+			else
+				state = Start;
+			break;	
+	}
+	switch(state){
 		case Start:
+			tmpB = 0x01;
 			break;
-
-		case OFF:
-			B = 0x01;
-		   break;
-
-		case ON:
-			if(tmpA == 0x00) {
-				B = 0x02;
-			 }
-			 else{
-				B = 0x01;
-			     }
-			  break;
-
-		 default:
+		
+		case led2_on:
+			tmpB = 0x02;
 			break;
-   } // State actions
+		
+		case wait:
+			tmpB = 0x02;
+			break;
+		
+		case led1_on:
+			tmpB = 0x01;
+			break;
+	}			
+}
 
-  }
-void main() {
-	 DDRA = 0x00; PORTA = 0xFF;
-	 DDRB = 0xFF; PORTB = 0x00;
+int main(void)
+{
+	DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
+	DDRB = 0xFF; PORTB = 0x00; // Configure port B's 8 pins as outputs
+										// initialize to 0s
+																				
+	state = Start;
 
-  	B = 0x01; //initialize output 
-	state = Start; // Indicates initial call
-   	 while(1) { 
-		Tick(); 
+	while (1) 
+    {
+		input = PINA & 0x01;
+		led_System();
+		PORTB = tmpB;
 	}
 }

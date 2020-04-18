@@ -39,12 +39,34 @@ echo Running all tests..."\n\n
 #checkResult
 
 # Add tests below
-test “cntA0 > 100 => PORTB: 0x0F”
-set state = OFF
+test "PINA: 0x00  => PORTB: 0x01"
 setPINA 0x00
 continue 2
 expectPORTB 0x01
-expect state OFF
+checkResult
+
+test "PINA: 0x01 => PORTB: 0x02"
+setPINA 0x01
+continue 2
+expectPORTB 0x02
+checkResult
+
+test "PINA: 0x01 => PORTB: 0x02"
+setPINA 0x01
+continue 2
+expectPORTB 0x02
+checkResult
+
+test "PINA: 0x00 => PORTB: 0x02"
+setPINA 0x00
+continue 2
+expectPORTB 0x02
+checkResult
+
+test "PINA: 0x01 => PORTB: 0x01"
+setPINA 0x01
+continue 2
+expectPORTB 0x01
 checkResult
 
 # Report on how many tests passed/tests ran
