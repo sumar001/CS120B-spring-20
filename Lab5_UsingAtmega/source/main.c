@@ -110,21 +110,3 @@ int main(void)
 	}
 }
 
-/* int main(void) {
-     Insert DDR and PORT initializations 
-	DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
-	DDRC = 0xFF; PORTC = 0x00; // Configure port C's 8 pins as outputs
-	
-	state = start;
-	tmpC = 0x00;
-     Insert your solution below 
-	while (1) 
-         {		
-		Tick();
-		PORTC = tmpC;
-
-	}
-
-	return 0;
-}  */
-

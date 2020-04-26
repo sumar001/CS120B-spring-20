@@ -39,30 +39,29 @@ echo Running all tests..."\n\n
 #checkResult
 
 # Add tests below
-test "PINA: 0xFE  => PORTC: 1"
+test "PINA: 0xFE  => PORTB: 1"
 setPINA 0xFE
 continue 2
-expectPORTC 1
+expectPORTB 1
 checkResult
 
-test "PINA: 0xFE => PORTC: 1"
+test "PINA: 0xFE => PORTB: 1"
 setPINA 0xFE
 continue 2
-expectPORTC 1
+expectPORTB 1
 checkResult
 
-test "PINA: 0xFF => PORTC: 1"
+test "PINA: 0xFF => PORTB: 1"
 setPINA 0xFF
 continue 2
-expectPORTC 1
+expectPORTB 1
 checkResult
 
-test "PINA: 0xFD => PORTC: 0"
+test "PINA: 0xFD => PORTB: 1"
 setPINA 0xFD
 continue 2
-expectPORTC 0
+expectPORTB 1
 checkResult
-
 
 # Report on how many tests passed/tests ran
 set $passed=$tests-$failed

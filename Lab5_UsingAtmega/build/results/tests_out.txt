@@ -3,14 +3,5 @@ Note: automatically using hardware breakpoints for read-only addresses.
 ======================================================
 Running all tests..."
 
-"PINA: 0xFE  => PORTC: 1"...
-	Expected 1 
-	PORTC '0x800028:	0x00
-"PINA: 0xFE => PORTC: 1"...
-	Expected 1 
-	PORTC '0x800028:	0x00
-"PINA: 0xFF => PORTC: 1"...
-	Expected 1 
-	PORTC '0x800028:	0x00
-"PINA: 0xFD => PORTC: 0"...======================================================
+"PINA: 0xFE  => PORTB: 1"..."PINA: 0xFE => PORTB: 1"..."PINA: 0xFF => PORTB: 1"..."PINA: 0xFD => PORTB: 1"...======================================================
 Quitting: Remote doesn't know how to detach
