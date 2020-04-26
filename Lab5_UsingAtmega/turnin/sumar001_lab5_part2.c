@@ -132,7 +132,7 @@ int main(void) {
 	while (1) 
          {		
 		Tick();
-		PORTC = ~tmpC;
+		PORTC = tmpC;
 
 	}
 
