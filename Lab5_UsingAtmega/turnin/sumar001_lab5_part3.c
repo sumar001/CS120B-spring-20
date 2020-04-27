@@ -12,101 +12,71 @@
 #include "simAVRHeader.h"
 #endif
 
-enum States{start,init, hold, light} state;
+enum States{start, init, press} state;
 
-unsigned char tmpB;
-
+unsigned char tmpA = 0;
+unsigned char tmpC = 0;
 
 void Tick(){
-      
-	switch(state){//Transitions
-		case start:
-		tmpB = 0x00;
-		state = init;
-		break;
-		
-		case init:
-		if((~PINA & 0x01) == 0x01)
-		{
-			state = light;
-			 break;
-		}
-		else
-		{
+	
+	tmpA = ~PINA;
+
+	switch(state){
+		case start: 
 			state = init;
-			 break;
-		}
-		
-		case light:
-		state = hold;
-		break;
-		
-		case hold:
-		if((~PINA & 0x01) == 0x01)
-		{
-			state = hold; 
 			break;
-		}
-		else if((~PINA & 0x01) == 0x00)
-		{
-			state = init; 
-			break;
-		}
-		
-		default:
-		break;
-	}
-	
-	switch(state){ //State actions
-		case start:
-		break;
-		
-		case init:
-		break;
-		
-		case light:
-		if(tmpB == 0x00)
-		{
-			tmpB = 0x01; 
-			break;
-		}
-		else if(tmpB == 0x2A)
-		{
-			tmpB = 0x00; 
-			break;
-		}
-		else
-		{
-			tmpB = (tmpB << 1);
-			if((tmpB & 0x04) == 0x04)
-			{
-				tmpB = tmpB | 0x01; 
+					
+		case init: 
+			switch(tmpC){
+				case 0: 
+					PORTC  = 0x00; 
+					break;
+
+				case 1: 
+					PORTC = 0x2A; 
+					break;
+  
+				case 2: 
+					PORTC = 0x15;
+					 break;
+  
+				case 3: 
+					PORTC = 0x33; 
+					break;
+  
+				default:
+					 PORTC = 0x00; 
+					break;
+				}
+						
+				if( tmpA == 1 ) {
+					state = press;
+					tmpC = (tmpC < 3) ? ++tmpC : 0;
+					}
+				else{
+					state = init;
+					}
+					break;
+						
+		case press:	
+			state = tmpA  ?  press: init; 
 				break;
-			}
-			break;
-		}
-		
-		case hold:
-		break;
-		
-		default:
-		break;
-	}
+			default: 
+				break;				
+	      }
 	
-}
+	};
 
 int main(void)
 {
-	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0xFF; PORTB = 0x00;
-
-	state = start;
-	tmpB = 0x00;
-
-	while(1)
-	{
+    /* Replace with your application code */
+	DDRA=0x00; PORTA=0xFF;
+	DDRC=0xFF; PORTC=0x00;
+	
+	state=start;
+	
+    while (1) 
+    {
 		Tick();
-		PORTB = tmpB;
-	}
+    }
 }
-
