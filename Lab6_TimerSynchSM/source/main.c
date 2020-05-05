@@ -14,8 +14,11 @@
 #include "simAVRHeader.h"
 #endif
 
+
+/*
+ 
 //==================================================================
-//starting PART !
+//starting PART 1
 //=================================================================
 enum States {Init, Led1, Led2, Led3} state;
 
@@ -57,7 +60,7 @@ void Tick() {
 }
 
 int main(void) {
-    /* Insert DDR and PORT initializations */
+    // Insert DDR and PORT initializations 
 	DDRB = 0XFF;   //Set PortB to output
 	PORTB = 0x00;  //Init portB to 0s
 
@@ -66,7 +69,7 @@ int main(void) {
 	
 	state = Init;
 
-    /* Insert your solution below */
+     Insert your solution below 
     while (1) {
 	
 	  Tick();
@@ -76,4 +79,6 @@ int main(void) {
 
     }
     return 1;
-}
+} 
+*/
+//===================END OF PART1================================
