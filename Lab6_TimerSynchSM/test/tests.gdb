@@ -39,6 +39,21 @@ echo Running all tests..."\n\n
 #checkResult
 
 # Add tests below
+test "Initialize to PORTB: 0x01"
+ timeContinue
+ expectPORTB 0x01
+ checkResult
+
+test "1 period => PORTB: 0x02"
+ timeContinue 1
+ expectPORTB 0x02
+ checkResult
+
+test "2 period => PORTB: 0X01"
+ timeContinue 2
+ expectPortB 0x01
+ checkResult
+
 
 # Report on how many tests passed/tests ran
 set $passed=$tests-$failed

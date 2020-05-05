@@ -15,7 +15,7 @@
 #endif
 
 
-/*
+
  
 //==================================================================
 //starting PART 1
@@ -69,7 +69,7 @@ int main(void) {
 	
 	state = Init;
 
-     Insert your solution below 
+   // Insert your solution below 
     while (1) {
 	
 	  Tick();
@@ -80,5 +80,5 @@ int main(void) {
     }
     return 1;
 } 
-*/
+
 //===================END OF PART1================================
