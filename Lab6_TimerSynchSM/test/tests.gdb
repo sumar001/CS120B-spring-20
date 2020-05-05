@@ -49,9 +49,39 @@ test "1 period => PORTB: 0x02"
  expectPORTB 0x02
  checkResult
 
-test "2 period => PORTB: 0X01"
+test "2 period => PORTB: 0X02"
  timeContinue 2
- expectPortB 0x01
+ expectPortB 0x02
+ checkResult
+
+test "Pressing to Pause..PINA: 0xFE => PORTB: 0x02"
+ setPINA 0xFE
+ timeContinue 
+ expectPORTB 0x02
+ checkResult
+
+test "Still holding button.. PINA: 0xFE => PORTB: 0x02"
+ setPINA 0xFE
+ timeContinue
+ expectPORTB 0x02
+ checkResult
+
+test "PINA: 0xFF => PORTB: 0x02"
+ setPINA 0xFF
+ timeContinue
+ expectPORTB 0x02
+ checkResult
+
+test "Pressing button restarts game, 3 periods passed.. PINA: 0xFE => PORTB: 0x04"
+ timeContinue 3
+ setPINA 0xFE
+ expectPORTB 0x04
+ checkResult
+
+test "3 period passed.. PINA: 0xFF => PORTB: 0x02"
+ setPINA 0xFF
+ timeContinue 3
+ expectPORTB 0x02
  checkResult
 
 

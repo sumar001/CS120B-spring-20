@@ -36,7 +36,7 @@ void Tick() {
 
 		case hold1:
 			if(button)
-				state = Init;
+				state = Led1;
 			else
 				state = hold1;
 			break;
@@ -50,7 +50,7 @@ void Tick() {
 
 		case hold2:
 			if(button)
-				state = Init;
+				state = Led2;
 			else
 				state = hold2;
 			break;
@@ -64,7 +64,7 @@ void Tick() {
 
 		case hold3:
 			if(button)
-				state = Init;
+				state = Led3;
 			else
 				state = hold3;
 			break;
