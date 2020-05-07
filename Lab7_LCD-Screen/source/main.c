@@ -14,162 +14,186 @@
 #include "simAVRHeader.h"
 #endif
 
-unsigned char i = 0x00;
-unsigned char c = '0' ;
-void Tick();
-enum States {Start, INIT, INC, DEC, WAIT, RESET}state;
+unsigned char tempB = 0x00;
+unsigned char tempA = 0x00;
+unsigned char count = 0x00;
+unsigned char buttonHeld = 0x00;
 
+unsigned char A0 = 0x00; //button 1
+unsigned char A1 = 0x00; //button 2
 
-int main(void)
-{
-    DDRA = 0x00; PORTA = 0xFF;
-	DDRC = 0xFF; PORTC = 0x00; //LCD data lines
-	DDRD = 0xFF; PORTD = 0x00; //LCD control lines
-	
-	//Initializes the LCD display
-	LCD_init();
-	
-	TimerSet(500);
-	TimerOn();
-	
-    while(1)
-    {
-	    Tick();
-        while (!TimerFlag);
-        TimerFlag = 0;
-    }    
-}
+enum SM_States { SMStart, SM_Init, PRESS_INCR, INCR, PRESS_DECR, DECR, WAIT, RESET } SM_State;
 
 void Tick()
 {
-	switch(state) // transitions
-	{ 
-		case Start:
-		{
-			LCD_Cursor(1);
-			LCD_WriteData('0');
-			state = INIT; 
-			break;
+		A0 = ~PINA & 0x01;
+	 	A1 = ~PINA & 0x02;
+	switch(SM_State) {   // Transitions
+		case SMStart:  // Initial transition
+		SM_State = SM_Init;
+		break;
+
+		case SM_Init:
+		if (A0 && !A1) {
+			if (PORTB < 9) {
+				PORTB = PORTB + 1;
+				count++;
+			}
+			SM_State = INCR;
 		}
+		else if (A0 && A1) {
+			SM_State = RESET;
+		}
+		else if (A1 && !A0) {
+			if (PORTB > 0) {
+					PORTB = PORTB - 1;
+					count--;
+			}
+			SM_State = DECR;
+		}
+		break;
+
+		case INCR:
+		if ((A0 && !A1) && (buttonHeld <= 10)) { 
+			SM_State = INCR;
+		}
+		else if (!A0) { 
+			SM_State = WAIT;
+		}
+		else if (A0 && A1) {
+			SM_State = RESET;
+		}
+		else if ((A0 && !A1) && (buttonHeld > 10)) { 
+			SM_State = WAIT;
+		}
+		break;
 		
-		case INIT:
-		{
-			if((~PINA & 0x03) == 0x01)
-			{
-				state = INC; break;
-			}
-			else if((~PINA & 0x03) == 0x02)
-			{
-				state = DEC; break;
-			}
-			else if((~PINA & 0x03) == 0x03)
-			{
-				state = RESET; break;
-			}
-			else
-			{
-				state = INIT; break;
-			}
+		case DECR:
+		if ((A1 && !A0) && (buttonHeld <= 10)) {
+			SM_State = DECR;
 		}
-		
-		case INC:
-		{
-			state = WAIT; break;
+		else if (!A1) {
+			SM_State = WAIT;
 		}
-		
-		case DEC:
-		{
-			state = WAIT; break;
+		else if (A1 && A0) {
+			SM_State = RESET;
 		}
+		else if ((!A0 && A1) && (buttonHeld > 10)) { 
+			SM_State = WAIT;
+		}
+		break;
 		
 		case WAIT:
-		{
-			if((~PINA & 0x03) == 0x01)
-			{
-				state = INC; break;
-			}
-			else if((~PINA & 0x03) == 0x02)
-			{
-				state = DEC; break;
-			}
-			else if((~PINA & 0x03) == 0x03)
-			{
-				state = RESET; break;
-			}
-			else if((~PINA & 0x03) == 0x00)
-			{
-				state = INIT; break;
-			}
-			else 
-			{
-				state = WAIT; break;
-			}
+		if (!A0 && !A1) {
+			SM_State = WAIT;
 		}
+		else if (A0 && A1) {
+			SM_State = RESET;
+		}
+		else if (A0 && !A1 )  {
+			if (PORTB < 9) {
+				PORTB = PORTB + 1;
+				count++;
+			}
+			SM_State = INCR;
+		}
+		else if (A1 && !A0) {
+			if (PORTB > 0) {
+				PORTB = PORTB - 1;
+				count--;
+			}
+			SM_State = DECR;
+		}
+		break;
 		
 		case RESET:
-		{
-			if((~PINA & 0x03) == 0x00)
-			{
-				state = INIT; break;
+		if (A0 && !A1) {
+			if (PORTB < 9) {
+				PORTB = PORTB + 1;
+				count++;
 			}
-			else
-			{
-				state = RESET; break;
-			}
+			SM_State = INCR;
 		}
+		else if (A1 && !A0) {
+			if (PORTB > 0) {
+				PORTB = PORTB - 1;
+				count--;
+			}
+			SM_State = DECR;
+		}
+		else {
+			SM_State = RESET;
+		}
+		break;
+
+		default:
+		SM_State = SMStart;
+		break;
+	} // Transitions
+
+	switch(SM_State) {   // State actions
+		case SM_Init:
+		PORTB = 7;
+		count = 7;
+		LCD_Cursor(1);
+		LCD_WriteData(count + '0');
+		buttonHeld =0;
+		break;
+		
+		case INCR:
+
+		LCD_Cursor(1);
+		LCD_WriteData(count + '0');
+		buttonHeld++; 
+		break;
+		
+		case DECR:
+	
+		LCD_Cursor(1);
+		LCD_WriteData(count + '0');
+		buttonHeld++;
+		break;
+		
+		case WAIT:
+		buttonHeld =0;
+		break;
+		
+		case RESET:
+		PORTB = 0;
+		count = 0;
+		LCD_Cursor(1);
+		LCD_WriteData(count + '0');
+		buttonHeld =0;
+		break;
 		
 		default:
-			break;
-	}
+		break;
+	} // State actions
+			A0 = 0x00; //reset for next round
+			A1 = 0x00; //reset for next round
+}
+
+int main(void) {
 	
-	switch(state) //state actions
+	DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
+	DDRB = 0xFF; PORTB = 0x00; // Configure port B's 8 pins as outputs
+	DDRC = 0xFF; PORTC = 0x00; // Configure port C's 8 pins as outputs,
+	DDRD = 0xFF; PORTD = 0x00; // Configure port D's 8 pins as outputs,
+	
+	SM_State = SMStart; // Indicates initial call
+	LCD_init();
+	TimerSet(100);
+	TimerOn();
+
+	unsigned char tempA0 = 0x00; 
+	unsigned char tempA1 = 0x00;
+	
+	while(1)
 	{
-		case Start:
-			break;
-			
-		case INIT:
-			break;
-			
-		case INC:
-		{
-			if(i >= 9)
-			{
-				i = 9;
-			}
-			else
-			{
-				++i;
-			}
-			LCD_Cursor(1);
-			LCD_WriteData(i + '0');
-			break;
-		}
-		
-		case DEC:
-		{
-			if(i <= 0)
-			{
-				i = 0;
-			}
-			else
-			{
-				--i;
-			}
-			LCD_Cursor(1);
-			LCD_WriteData(i + '0');
-			break;
-		}
-		
-		case WAIT:
-			break;
-			
-		case RESET:
-		{
-			i = 0; 
-			LCD_Cursor(1);
-			LCD_WriteData(i + '0');
-			break;
-		}
+
+		Tick();
+		while(!TimerFlag);
+		TimerFlag = 0;
 	}
 }
 /*
