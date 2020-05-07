@@ -14,159 +14,110 @@
 #include "simAVRHeader.h"
 #endif
 
-enum States {Start, INIT, INC, DEC, WAIT, RESET}state;
-unsigned char counter = 0;
-void Tick(){
-	switch(state){ 
-		case Start:
-		{
-			LCD_Cursor(1);
-			LCD_WriteData('0');
-			state = INIT;
-			break;
-		}
-		
-		case INIT:
-		if((~PINA & 0x03) == 0x01)
-		{
-			state = INC; break;
-		}
-		else if((~PINA & 0x03) == 0x02)
-		{
-			state = DEC; break;
-		}
-		else if((~PINA & 0x03) == 0x03)
-		{
-			state = RESET; break;
-		}
-		else
-		{
-			state = INIT; break;
-		}
-		
-		case INC:
-		state = WAIT;
-		break;
-		
-		case DEC:
-		state = WAIT;
-		break;
-		
-		case WAIT:
-		if((~PINA & 0x03) == 0x01)
-			{
-				state = INC; break;
+unsigned char tmpA = 0x00;
+unsigned char tmpC = 0x00;
+
+enum States{wait, inc, dec, zero} state;
+
+unsigned char button0;
+unsigned char button1;
+
+unsigned char tmpC;
+
+
+void button_Tick(){
+	button0 = ~PINA & 0x01;
+	button1 = ~PINA & 0x02;
+	
+	switch(state){ // Transitions
+		case wait:
+			if(button0 && !button1){
+				state = inc;
 			}
-			else if((~PINA & 0x03) == 0x02)
-			{
-				state = DEC; break;
+			else if(!button0 && button1){
+				state = dec;
 			}
-			else if((~PINA & 0x03) == 0x03)
-			{
-				state = RESET; break;
+			else if(button0 && button1){
+				state = zero;
 			}
-			else if((~PINA & 0x03) == 0x00)
-			{
-				state = INIT; break;
-			}
-			else 
-			{
-				state = WAIT; break;
-			}
-		
-		case RESET:
-		if((~PINA & 0x03) == 0x00)
-		{
-			state = INIT; break;
-		}
 			else
-		{
-			state = RESET; break;
-		}
-		
-		default:
-		break;
+				state = wait;
+			break;
+		case inc:
+			if(button0 && !button1){
+				state = inc; 
+			}
+			else if(button0 && button1){
+				state = zero;
+			}
+			else
+				state = wait;
+			break;
+		case dec:
+			if(!button0 && button1){
+				state = dec;
+			}
+			else if(button0 && button1){
+				state = zero;
+			}
+			else
+				state = wait;
+			
+			break;
+		case zero:
+			if(button0 && button1){
+				state = zero;
+			}
+			else
+				state = wait;
+			break;
+	
 	}
-	
-	
-	
-	switch(state){
-		case Start:
-		{
-		}
-		break;
-		
-		case INIT:
-		break;
-		
-		case INC:
-		{
-			if(counter >= 0x09)
-			{
-				counter = 0x09;
-			}
-			else
-			{
-				counter = counter + 0x01;
-			}
-			LCD_Cursor(1);
-			LCD_WriteData(counter + '0');
+	switch(state){ // State actions
+		case wait:
 			break;
-			
-			
-		}
-		
-		case DEC:
-		{
-			if(counter <= 0x00)
-			{
-				counter = 0x00; 
-			}
-			else
-			{
-				counter = counter - 0x01;
-			
-			}
-			LCD_Cursor(1);
-			LCD_WriteData(counter + '0');
+		case inc:
+			if(tmpC < 9)
+				tmpC = tmpC + 1;
 			break;
-			
-		}
-		
-		case WAIT:
-		break;
-		
-		case RESET:
-		{
-			counter = 0; 
-			LCD_Cursor(1);
-			LCD_WriteData(counter + '0');
+		case dec:
+			if(tmpC > 0)
+				tmpC = tmpC - 1;
 			break;
-		}
-		default: 
-		break;
+		case zero:
+			tmpC = 0;
+			break;
+	
 	}
 }
 
 int main(void)
 {
-	DDRA = 0x00;PORTA = 0xFF;
-	//DDRB = 0xFF;PORTB = 0x07;
-	DDRC = 0xFF; PORTC = 0x00;
-	DDRD = 0xFF; PORTD = 0x00;
-	LCD_init();
-	TimerSet(12);
-	TimerOn();
-	state = Start;
-	while(1) {
-		Tick();
-		while (!TimerFlag);
-		TimerFlag = 0;
-		// Note: For the above a better style would use a synchSM with TickSM()
-		// This example just illustrates the use of the ISR and flag
-	}
-}
+	DDRA = 0x00; PORTA = 0xFF; // A input initialize to 0xFF
+	DDRC = 0xFF; PORTC = 0x00; // LCD data lines
+	DDRD = 0xFF; PORTD = 0x00; // LCD control lines
 
+	TimerSet(1000);
+	TimerOn();
+	
+	// Initializes the LCD display
+	LCD_init();	
+	LCD_ClearScreen();
+	
+	state = wait;
+	tmpC = 0x00;
+	while(1){
+		LCD_Cursor(1);
+		button_Tick();
+		LCD_WriteData(tmpC + '0');
+		while(!TimerFlag){}
+		TimerFlag = 0;
+	}
+	// Starting at position 1 on the LCD screen, writes Hello World
+	//LCD_DisplayString(1, "Hello World");
+	
+	//while(1) {continue;}
+}
 /*
     int main(void) {
     // Insert DDR and PORT initializations 
