@@ -14,106 +14,163 @@
 #include "simAVRHeader.h"
 #endif
 
-enum States{wait, inc, dec, zero} state;
+unsigned char i = 0x00;
+unsigned char c = '0' ;
+void Tick();
+enum States {Start, INIT, INC, DEC, WAIT, RESET}state;
 
-unsigned char tmpA = 0x00;
-unsigned char tmpC = 0x00;
-
-unsigned char button0;
-unsigned char button1;
-
-unsigned char tmpC;
-
-
-void button_Tick(){
-	button0 = ~PINA & 0x01;
-	button1 = ~PINA & 0x02;
-	
-	switch(state){ // Transitions
-		case wait:
-			if(button0 && !button1){
-				state = inc;
-			}
-			else if(!button0 && button1){
-				state = dec;
-			}
-			else if(button0 && button1){
-				state = zero;
-			}
-			else
-				state = wait;
-			break;
-		case inc:
-			if(button0 && !button1){
-				state = inc; 
-			}
-			else if(button0 && button1){
-				state = zero;
-			}
-			else
-				state = wait;
-			break;
-		case dec:
-			if(!button0 && button1){
-				state = dec;
-			}
-			else if(button0 && button1){
-				state = zero;
-			}
-			else
-				state = wait;
-			
-			break;
-		case zero:
-			if(button0 && button1){
-				state = zero;
-			}
-			else
-				state = wait;
-			break;
-	
-	}
-	switch(state){ // State actions
-		case wait:
-			break;
-		case inc:
-			if(tmpC < 9)
-				tmpC = tmpC + 1;
-			break;
-		case dec:
-			if(tmpC > 0)
-				tmpC = tmpC - 1;
-			break;
-		case zero:
-			tmpC = 0;
-			break;
-	
-	}
-}
 
 int main(void)
 {
-	DDRA = 0x00; PORTA = 0xFF; // A input initialize to 0xFF
-	DDRC = 0xFF; PORTC = 0x00; // LCD data lines
-	DDRD = 0xFF; PORTD = 0x00; // LCD control lines
-
-	TimerSet(1000);
+    DDRA = 0x00; PORTA = 0xFF;
+	DDRC = 0xFF; PORTC = 0x00; //LCD data lines
+	DDRD = 0xFF; PORTD = 0x00; //LCD control lines
+	
+	//Initializes the LCD display
+	LCD_init();
+	
+	TimerSet(500);
 	TimerOn();
 	
-	// Initializes the LCD display
-	LCD_init();	
-	LCD_ClearScreen();
-	
-	state = wait;
-	tmpC = 0x00;
-	while(1){
-		LCD_Cursor(1);
-		button_Tick();
-		LCD_WriteData(tmpC + '0');
-		while(!TimerFlag){}
-		TimerFlag = 0;
+    while(1)
+    {
+	    Tick();
+        while (!TimerFlag);
+        TimerFlag = 0;
+    }    
+}
+
+void Tick()
+{
+	switch(state) // transitions
+	{ 
+		case Start:
+		{
+			LCD_Cursor(1);
+			LCD_WriteData('0');
+			state = INIT; 
+			break;
+		}
+		
+		case INIT:
+		{
+			if((~PINA & 0x03) == 0x01)
+			{
+				state = INC; break;
+			}
+			else if((~PINA & 0x03) == 0x02)
+			{
+				state = DEC; break;
+			}
+			else if((~PINA & 0x03) == 0x03)
+			{
+				state = RESET; break;
+			}
+			else
+			{
+				state = INIT; break;
+			}
+		}
+		
+		case INC:
+		{
+			state = WAIT; break;
+		}
+		
+		case DEC:
+		{
+			state = WAIT; break;
+		}
+		
+		case WAIT:
+		{
+			if((~PINA & 0x03) == 0x01)
+			{
+				state = INC; break;
+			}
+			else if((~PINA & 0x03) == 0x02)
+			{
+				state = DEC; break;
+			}
+			else if((~PINA & 0x03) == 0x03)
+			{
+				state = RESET; break;
+			}
+			else if((~PINA & 0x03) == 0x00)
+			{
+				state = INIT; break;
+			}
+			else 
+			{
+				state = WAIT; break;
+			}
+		}
+		
+		case RESET:
+		{
+			if((~PINA & 0x03) == 0x00)
+			{
+				state = INIT; break;
+			}
+			else
+			{
+				state = RESET; break;
+			}
+		}
+		
+		default:
+			break;
 	}
 	
+	switch(state) //state actions
+	{
+		case Start:
+			break;
+			
+		case INIT:
+			break;
+			
+		case INC:
+		{
+			if(i >= 9)
+			{
+				i = 9;
+			}
+			else
+			{
+				++i;
+			}
+			LCD_Cursor(1);
+			LCD_WriteData(i + '0');
+			break;
+		}
+		
+		case DEC:
+		{
+			if(i <= 0)
+			{
+				i = 0;
+			}
+			else
+			{
+				--i;
+			}
+			LCD_Cursor(1);
+			LCD_WriteData(i + '0');
+			break;
+		}
+		
+		case WAIT:
+			break;
+			
+		case RESET:
+		{
+			i = 0; 
+			LCD_Cursor(1);
+			LCD_WriteData(i + '0');
+			break;
+		}
+	}
 }
 /*
     int main(void) {
