@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *  Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #6  Exercise #1
+ *	Assignment: Lab #6  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -14,177 +14,110 @@
 #include "simAVRHeader.h"
 #endif
 
-//===============Start of Lab2=====================================
-
-	unsigned char button = 0x00;
-	unsigned char tmpB = 0x00;
-
-enum States{Init, Led1, Led2, Led3, hold1, hold2, hold3} state;
-
-void Tick() {
-	switch(state) {
-		case Init: 
-			state = Led1;
+enum dummyMachine {Start, Light1, Light2, Light3, Light4, wait,restart}state;
+void Tick(){
+	switch(state){ //transitions
+		case Start:
+		{
+			PORTB = 0x00;
+			state = Light1;
 			break;
-
-		case Led1:
-			if(button)
-				state = hold1;
+		}
+		case Light1:
+		{
+			if((~PINA&0x01) == 0x01){
+			state = wait; break;
+			}
+			else{
+			state = Light2; break;
+			}
+		}
+		case Light2:
+		{
+			if((~PINA&0x01) == 0x01){		
+				state = wait; break;
+				
+			}
+			else{
+			state = Light3; break;
+			}
+		}
+		case Light3:
+		{
+			if((~PINA&0x01) == 0x01){
+				state = wait; break;
+			}
+			else{
+			state = Light4; break;
+			}
+		}
+		case Light4:
+		{
+			if((~PINA&0x01) == 0x01){
+			state = wait; break;
+			}
+			else{
+			state = Light1; break;
+			}
+		}
+		case wait:
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = wait; break;
+			}
 			else
-				state = Led2;
-			break;
-
-		case hold1:
-			if(button)
-				state = Led1;
+			{
+				state = restart; break;
+			}
+		case restart:
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = Light1; break;
+			}
 			else
-				state = hold1;
-			break;
-
-		case Led2:
-			if(button)
-				state = hold2;
-			else
-				state = Led3;
-			break;
-
-		case hold2:
-			if(button)
-				state = Led2;
-			else
-				state = hold2;
-			break;
-
-		case Led3:
-			if(button)
-				state = hold3;
-			else
-				state = Led1;
-			break;
-
-		case hold3:
-			if(button)
-				state = Led3;
-			else
-				state = hold3;
-			break;
+			{
+				state = restart; break;
+			}
+		default:
+		break;
 	}
-
-	switch(state) {
-		case Led1:
-			tmpB = 0x01;
-			break;
-
-		case hold1:
-			tmpB = 0x01;
-			break;
-
-		case Led2:
-			tmpB = 0x02;
-			break;
-
-		case hold2:
-			tmpB = 0x02;
-			break;
-
-		case Led3:
-			tmpB = 0x04;
-			break;
-			
-		case hold3:
-			tmpB = 0x04;
-			break;
+	switch(state){ 
+		case Start:{
+		break;
+		}
+		case Light1:
+		{
+			PORTB = 0x01; break;
+		}
+		case Light2:
+		{
+			PORTB = 0x02; break;
+		}
+		case Light3:
+		{
+			PORTB = 0x04; break;
+		}
+		case Light4:
+		{
+			PORTB = 0x02; break;
+		}
+		default:
+		break;
 	}
 }
 
-int main()
+int main(void)
 {
-	DDRB = 0xFF; PORTB = 0x00;
-	DDRA = 0x00; PORTA = 0xFF;
-
-	TimerSet(300);
+	DDRA = 0x00;PORTA = 0xFF;
+	DDRB = 0xFF;PORTB = 0x00;
+	TimerSet(50);
 	TimerOn();
-
-	state = Init;
-
+	state = Start;
 	while(1) {
-		button = ~PINA & 0x08;
 		Tick();
-
-		while(!TimerFlag);
+		while (!TimerFlag);
 		TimerFlag = 0;
-
-		PORTB = tmpB;
-	}
-	return 1;
-}
-
-
-//=============END OF PART2=========================================
-
-/*
-//==================================================================
-//starting PART 1
-//=================================================================
-enum States {Init, Led1, Led2, Led3} state;
-
-	unsigned char tmpB = 0x00;
-
-void Tick() {
-	switch(state)
-	{
-		case Init:
-			state = Led1;
-			break;
-
-		case Led1:
-			state = Led2;
-			break;
-
-		case Led2:
-			state = Led3;
-			break;
-			
-		case Led3:
-			state = Led1;
-			break;
-	}
-
-	switch(state) {
-		case Led1:
-			tmpB = 0x01;
-			break;
-
-		case Led2:
-			tmpB = 0x02;
-			break;
-
-		case Led3:
-			tmpB = 0x04;
-			break;
+		// Note: For the above a better style would use a synchSM with TickSM()
+		// This example just illustrates the use of the ISR and flag
 	}
 }
-
-int main(void) {
-    // Insert DDR and PORT initializations 
-	DDRB = 0XFF;   //Set PortB to output
-	PORTB = 0x00;  //Init portB to 0s
-
-	TimerSet(1000);
-	TimerOn();
-	
-	state = Init;
-
-   // Insert your solution below 
-    while (1) {
-	
-	  Tick();
-	while (!TimerFlag); //Wait 1 sec
-	TimerFlag = 0;
-	PORTB = tmpB;
-
-    }
-    return 1;
-} 
-*/
-//===================END OF PART1================================
