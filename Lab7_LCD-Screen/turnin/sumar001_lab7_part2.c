@@ -17,13 +17,18 @@
 unsigned char tmpA = 0x00;
   unsigned char tmpC = 0x00;
   unsigned char score = 0x00;
+  unsigned char i = 0x00;
 
 
-  enum States{light1, wait1, light2, wait2, light3, wait3}state;
+  enum States{start, light1, wait1, light2, wait2, light3, wait3}state;
 
 void lightTick(){
 	switch (state) // Transitions
 	{
+		case start:
+			state = light1;
+			break;
+
 		case light1:
 			if(tmpA){
 				state = wait1;
@@ -48,13 +53,18 @@ void lightTick(){
 				if(score < 9)
 					score = score + 1;
 			}
+			else if(i % 2 == 0){
+				state = light1;
+				i++;
+			}
+
 			else{
 				state = light3;
 			}
 			break;
 		case wait2:
 			if(tmpA){
-				state = light2;
+				state = light1;
 			}
 			else{
 				state = wait2;
@@ -67,12 +77,13 @@ void lightTick(){
 					score = score - 1;
 			}
 			else{
-				state = light1;
+				state = light2;
+				i++;
 			}
 			break;
 		case wait3:
 			if(tmpA){
-				state = light3;
+				state = light1;
 			}
 			else{
 				state = wait3;
@@ -112,7 +123,7 @@ void lightTick(){
 
 	  TimerSet(300);
 	  TimerOn();
-	  state = light1;
+	  state = start;
 
 	  // Initialize LCD display
 	  LCD_init();
