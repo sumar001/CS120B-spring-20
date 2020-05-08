@@ -14,111 +14,126 @@
 #include "simAVRHeader.h"
 #endif
 
-
-enum States{start, init, inc, dec, reset} state;
-
-	unsigned char A0; //button A0
-	unsigned char A1; //button A1
-	unsigned char tmpC; //hold temporary value of portC
+unsigned char tmpA = 0x00;
+  unsigned char tmpC = 0x00;
+  unsigned char score = 0x00;
 
 
-void Tick(){
-	A0 = ~PINA & 0x01;
-	A1 = ~PINA & 0x02;
-	
-	switch(state){ // Transitions
-		case start:
-				state = init;
-				break;
+  enum States{light1, wait1, light2, wait2, light3, wait3}state;
 
-		case init:
-			if(!A0 && A1){
-				state = dec;
+void lightTick(){
+	switch (state) // Transitions
+	{
+		case light1:
+			if(tmpA){
+				state = wait1;
+				if(score > 0)
+					score = score -1;
 			}
-			else if(A0 && !A1){
-				state = inc;
+			else{
+				state = light2;
 			}
-			else if(A0 && A1){
-				state = reset;
-			}
-			else
-				state = init;
 			break;
-
-		case inc:
-			if(A0 && !A1){
-				state = inc; 
+		case wait1:
+			if(tmpA){
+				state = light1;
 			}
-			else if(A0 && A1){
-				state = reset;
+			else{
+				state = wait1;
 			}
-			else
-				state = init;
 			break;
-
-		case dec:
-			if(!A0 && A1){
-				state = dec;
+		case light2:
+			if(tmpA){
+				state = wait2;
+				if(score < 9)
+					score = score + 1;
 			}
-			else if(A0 && A1){
-				state = reset;
+			else{
+				state = light3;
 			}
-			else
-				state = init;
-			
 			break;
-
-		case reset:
-			if(A0 && A1){
-				state = reset;
+		case wait2:
+			if(tmpA){
+				state = light2;
 			}
-			else
-				state = init;
+			else{
+				state = wait2;
+			}
 			break;
-	
+		case light3:
+			if(tmpA){
+				state = wait3;
+				if(score > 0)
+					score = score - 1;
+			}
+			else{
+				state = light1;
+			}
+			break;
+		case wait3:
+			if(tmpA){
+				state = light3;
+			}
+			else{
+				state = wait3;
+			}
+			break;
 	}
-	switch(state){ // State actions
-		case init:
+	switch (state){ // State actions
+		case light1:
+			tmpC = 0x01;
+			break;
+		case wait1:
+			tmpC = 0x01;
+			break;
+		case light2:
+			tmpC = 0x02;
+			break;
+		case wait2:
+			tmpC = 0x02;
+			break;
+		case light3:
+			tmpC = 0x04;
+			break;
+		case wait3:
+			tmpC = 0x04;
 			break;
 
-		case inc:
-			if(tmpC < 9)
-				tmpC++ ;
-			break;
-
-		case dec:
-			if(tmpC > 0)
-				tmpC--;
-			break;
-
-		case reset:
-			tmpC = 0;
-			break;
-	
 	}
-}
+  }
+  
 
-int main(void)
-{
-	DDRA = 0x00; PORTA = 0xFF; // A input initialize to 0xFF
-	DDRC = 0xFF; PORTC = 0x00; // LCD data lines
-	DDRD = 0xFF; PORTD = 0x00; // LCD control lines
+  int main()
+  {
+	  DDRB = 0xFF; PORTB = 0x00; // Initiate DDRC to outputs
+	  DDRA = 0x00; PORTA = 0xFF; // Initiate DDRA to inputs
+	  DDRC = 0xFF; PORTC = 0x00; // LCD data lines
+	  DDRD = 0xFF; PORTD = 0x00; // LCD control lines
 
-	TimerSet(1000);
-	TimerOn();
-	
-	// Initializes the LCD display
-	LCD_init();	
-	LCD_ClearScreen();
-	
-	state = start;
-	tmpC = 0x00;
-	
-	while(1){
+	  TimerSet(300);
+	  TimerOn();
+	  state = light1;
+
+	  // Initialize LCD display
+	  LCD_init();
+	  LCD_ClearScreen();
+	  score = 0x05;
+
+	  while(1) {
 		LCD_Cursor(1);
-		Tick();
-		LCD_WriteData(tmpC + '0');
-		while(!TimerFlag){}
+		if(score == 9)
+			LCD_DisplayString(1,"You Win!!");
+		else
+			LCD_WriteData(score + '0');
+		tmpA = ~PINA & 0x01;
+		// User code (i.e. synchSM calls)
+		lightTick();
+		while (!TimerFlag){}	// Wait 1 sec
 		TimerFlag = 0;
-	}
-}
+		// Note: For the above a better style would use a synchSM with TickSM()
+		// This example just illustrates the use of the ISR and flag
+		PORTB = tmpC;
+		  
+	  }
+	  return 0;
+  }
