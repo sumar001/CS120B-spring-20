@@ -74,15 +74,23 @@ void Tick(){
 			break;
 
 		case reset:
-			if(A0 && A1){
-				state = reset;
-			}
-			else
+//			if(A0 && A1){
+//				state = reset;
+//			}
+//			else
 				state = init;
 			break;
 
 		case press:
 			if(A0 && !A1) {
+				state = press;
+				if(counter >=10) {
+					state = init;
+					counter = 0;
+				}
+			}
+
+			else if(!A0 && A1) {
 				state = press;
 				if(counter >=10) {
 					state = init;
