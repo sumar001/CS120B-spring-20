@@ -16,6 +16,8 @@
 #include "simAVRHeader.h"
 #endif
 
+			
+
 enum states{start, init, inc, dec, reset} state;
 
 	unsigned char A0; //button A0
@@ -117,3 +119,4 @@ int main(void)
 		PORTB = tmpB;
 	}
 }
+
