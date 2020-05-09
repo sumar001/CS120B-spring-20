@@ -7,137 +7,112 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
+ // Demo: 
+
 #include <avr/io.h>
 #include <timer.h>
 
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
+enum states{start, init, inc, dec, reset} state;
 
-enum States{start, inc, dec, reset, hold1,hold2} state;
-
-unsigned char A0; //PA0 --> button0
-unsigned char A1; //PA1 --> button1
-
-unsigned char tmpC;
+	unsigned char A0; //button A0
+	unsigned char A1; //button A1
+	unsigned char tmpB; //hold temporary value of portC
 
 
 void Tick(){
-	A0 = PINA & 0x01;
-	A1 = PINA & 0x02;
-		
+	A0 = ~PINA & 0x01;
+	A1 = ~PINA & 0x02;
+	
 	switch(state){ // Transitions
 		case start:
-			if(!A0 && !A1){
-				state = start;
+				state = init;
+				break;
+
+		case init:
+			if(!A0 && A1){
+				state = dec;
 			}
 			else if(A0 && !A1){
 				state = inc;
 			}
-			else if(!A0 && A1){
-				state = dec;
-			}
 			else if(A0 && A1){
 				state = reset;
 			}
+			else
+				state = init;
 			break;
-		
+
 		case inc:
-			if(A0 && A1){
+			if(A0 && !A1){
+				state = inc; 
+			}
+			else if(A0 && A1){
 				state = reset;
 			}
-			else{
-				state = hold2;
-			}
+			else
+				state = init;
 			break;
-		
+
 		case dec:
-			if(A0 && A1){
-				state = reset;
-			}
-			else{
-				state = hold2;
-			}
-			break;
-		
-		case reset:
-			if(!A0 && !A1){
-				state = start;
-			}
-			else if (A0 && !A1){
-				state = inc;
-			}
-			else if(!A0 && A1){
+			if(!A0 && A1){
 				state = dec;
 			}
 			else if(A0 && A1){
 				state = reset;
 			}
-			break;
-		
-		case hold1:
-			if(A0 && A1){
-				state = reset;
-			}
-			else if(A0 && !A1){
-				state = inc;
-			}
-			else if(!A0 && A1){
-				state = dec;
-			}
-			else{
-				state = hold1;
-			}
-			break;
-		
-		case hold2:
-			if(!A0 && !A1){
-				state = hold1;
-			}
-			else if(A0 && A1){
-				state = reset;
-			}
-			else{
-				state = hold2;
-			}
-			break;
+			else
+				state = init;
 			
+			break;
+
+		case reset:
+			if(A0 && A1){
+				state = reset;
+			}
+			else
+				state = init;
+			break;
+	
 	}
 	switch(state){ // State actions
-		case start:
+		case init:
 			break;
+
 		case inc:
-			if(tmpC < 9){
-				tmpC += 1;
-			}
+			if(tmpB < 9)
+				tmpB++ ;
 			break;
+
 		case dec:
-			if(tmpC > 0){
-				tmpC -= 1;
-			}
+			if(tmpB > 0)
+				tmpB--;
 			break;
+
 		case reset:
-			tmpC = 0;
+			tmpB = 0;
 			break;
-	}			
+	
+	}
 }
 
 int main(void)
 {
-	DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
-	DDRC = 0xFF; PORTC = 0x00; // Configure port C's 8 pins as outputs
-										// initialize to 0s
-																				
+	DDRA = 0x00; PORTA = 0xFF; 
+	DDRB = 0xFF; PORTB = 0x00; 
+
+	TimerSet(1000);
+	TimerOn();
+	
 	state = start;
-	tmpC = 0x07;
-
-	while (1) 
-    {		
+	tmpB = 0x07;
+	
+	while(1){
 		Tick();
-		PORTC = tmpC;
-
+		while(!TimerFlag){}
+		TimerFlag = 0;
+		PORTB = tmpB;
 	}
-
-	return 0;
 }
-

@@ -63,7 +63,7 @@ test "Pressing to Pause..PINA: 0xFE => PORTB: 0x02"
 test "Still holding button.. PINA: 0xFE => PORTB: 0x02"
  setPINA 0xFE
  timeContinue
- expectPORTB 0x02
+ expectPORTB 0x01
  checkResult
 
 test "Releasing Button..PINA: 0xFF => PORTB: 0x02"
@@ -73,15 +73,15 @@ test "Releasing Button..PINA: 0xFF => PORTB: 0x02"
  checkResult
 
 test "Pressing button restarts game, 3 periods passed.. PINA: 0xFE => PORTB: 0x04"
- timeContinue 3
- setPINA 0xFE
- expectPORTB 0x04
+ setPINA 0xFE 
+ continue 3 
+ expectPORTB 0x01
  checkResult
 
 test "Releasing button does not restart or pause game,3 period passed..PINA: 0xFF => PORTB: 0x02"
  setPINA 0xFF
  timeContinue 3
- expectPORTB 0x02
+ expectPORTB 0x01
  checkResult
 
 
