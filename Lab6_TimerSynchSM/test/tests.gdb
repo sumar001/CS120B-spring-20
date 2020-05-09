@@ -39,51 +39,52 @@ echo Running all tests..."\n\n
 #checkResult
 
 # Add tests below
-test "Initialize to PORTB: 0x01"
+test "Counter starts at 7.. PINA: 0xFF => PORTB: 0x07"
+ setPINA 0xFF
  timeContinue
- expectPORTB 0x01
+ expectPORTB 0x07
  checkResult
 
-test "1 period => PORTB: 0x02"
- timeContinue 1
- expectPORTB 0x02
- checkResult
-
-test "2 period => PORTB: 0X02"
- timeContinue 2
- expectPortB 0x02
- checkResult
-
-test "Pressing to Pause..PINA: 0xFE => PORTB: 0x02"
+test "Pressing Increment.. PINA: 0xFE  => PORTB: 0x08"
  setPINA 0xFE
+ timeContinue
+ expectPORTB 0x08
+ checkResult
+
+ #Still Pressing and 1500ms has passed
+test "PINA: 0xFE => PORTB: 0X09"
+ setPINA 0xFE
+ timeContinue
+ expectPortB 0x09
+ checkResult
+
+ #Releasing
+test "PINA: 0xFF => PORTB: 0x09"
+ setPINA 0xFF
  timeContinue 
- expectPORTB 0x02
+ expectPORTB 0x09
  checkResult
 
-test "Still holding button.. PINA: 0xFE => PORTB: 0x02"
- setPINA 0xFE
+ #Pressing Decrement
+test "PINA: 0xFD => PORTB: 0x08"
+ setPINA 0xFD
  timeContinue
- expectPORTB 0x02
+ expectPORTB 0x08
  checkResult
 
-test "Releasing Button..PINA: 0xFF => PORTB: 0x02"
+#Still pressing and 1500ms has passed
+test "PINA: 0xFD => PORTB: 0x07"
+ setPINA 0xFD
+ timeContinue
+ expectPORTB 0x07
+ checkResult
+
+ #Releasing (Letting Go)
+test "PINA: 0xFF => PORTB: 0x07"
  setPINA 0xFF
  timeContinue
- expectPORTB 0x02
+ expectPORTB 0x07
  checkResult
-
-test "Pressing button restarts game, 3 periods passed.. PINA: 0xFE => PORTB: 0x04"
- setPINA 0xFE 
- continue 3 
- expectPORTB 0x04
- checkResult
-
-test "Releasing button does not restart or pause game,3 period passed..PINA: 0xFF => PORTB: 0x02"
- setPINA 0xFF
- timeContinue 3
- expectPORTB 0x02
- checkResult
-
 
 # Report on how many tests passed/tests ran
 set $passed=$tests-$failed
