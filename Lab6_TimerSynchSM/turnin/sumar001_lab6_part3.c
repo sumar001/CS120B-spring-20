@@ -16,128 +16,104 @@
 #include "simAVRHeader.h"
 #endif
 
-	#define A0 (~PINA & 0x01)
-	#define A1 (~PINA & 0x02)
+enum states{start, init, inc, dec, reset} state;
 
-enum states{start, init, inc, dec, reset, click} state;
+	unsigned char A0; //button A0
+	unsigned char A1; //button A1
+	unsigned char tmpB; //hold temporary value of portC
 
 
-	unsigned char B = 0x00;
-	unsigned char counter = 0;
-
-void Tick() {
-	switch(state) {
-
+void Tick(){
+	A0 = ~PINA & 0x01;
+	A1 = ~PINA & 0x02;
+	
+	switch(state){ // Transitions
 		case start:
-			state = init;
-			break;
-
-		case init:
-			if(A0 && !A1) {
-				state = inc;
-				}
-			else if(!A0 && A1) {
-				state = dec;
-				}
-			else if(A0 && A1) {
-				state = reset;
-				}
-			else {
 				state = init;
-				}
 				break;
 
+		case init:
+			if(!A0 && A1){
+				state = dec;
+			}
+			else if(A0 && !A1){
+				state = inc;
+			}
+			else if(A0 && A1){
+				state = reset;
+			}
+			else
+				state = init;
+			break;
+
 		case inc:
-			state = click;
+			if(A0 && !A1){
+				state = inc; 
+			}
+			else if(A0 && A1){
+				state = reset;
+			}
+			else
+				state = init;
 			break;
 
 		case dec:
-			state = click;
-			 break;
+			if(!A0 && A1){
+				state = dec;
+			}
+			else if(A0 && A1){
+				state = reset;
+			}
+			else
+				state = init;
+			
+			break;
 
 		case reset:
-			state = init;
-			break;
-
-		case click:
-			if(A0 && !A1) {
-				state = click;
-				if(counter >= 10)
-					{
-					 state = init;
-					 counter = 0;
-					}
-				}
-
-			else if(!A0 && A1) {
-				state = click;
-				if(counter >= 10) {
-					state = init;
-					counter = 0;
-					}
-				}
-
-			else {
+			if(A0 && A1){
+				state = reset;
+			}
+			else
 				state = init;
-			    }
-				break;
-
-		default:
 			break;
-	    }
-
-	switch(state) {
-		case start:
+	
+	}
+	switch(state){ // State actions
+		case init:
 			break;
 
-		 case init:
-			break;
-		
 		case inc:
-			if( B < 0x09) {
-				B++;
-			  }
-
-		 case dec:
-			if(B > 0x09) {
-				B-- ;
-			 }
-
-		 case reset:
-			B = 0x00;
+			if(tmpB < 9)
+				tmpB++ ;
 			break;
 
-		 case click:
-			
-			counter++;
+		case dec:
+			if(tmpB > 0)
+				tmpB--;
 			break;
 
-		default:
+		case reset:
+			tmpB = 0;
 			break;
-		}
+	
 	}
-
-int main(void) {
- DDRA = 0x00; PORTA = 0xFF;
- DDRB = 0xFF; PORTB = 0x00;
-
- B = 0x07;
- state = start;
-
- TimerSet(100);
- TimerOn();
-
- while(1) {
-	Tick();
-        PORTB = B;
-
-	while(!TimerFlag) {}
-		TimerFlag = 0;
-	}
-   return 1;
 }
 
- 
+int main(void)
+{
+	DDRA = 0x00; PORTA = 0xFF; 
+	DDRB = 0xFF; PORTB = 0x00; 
 
-
-
+	TimerSet(100);
+	TimerOn();
+	
+	state = start;
+	tmpB = 0x07;
+	
+	while(1){
+		Tick();
+		while(!TimerFlag){}
+		TimerFlag = 0;
+		PORTB = tmpB;
+	}
+}
