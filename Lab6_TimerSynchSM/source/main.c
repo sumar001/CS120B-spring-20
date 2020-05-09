@@ -18,12 +18,12 @@
 
 			
 
-enum states{start, init, inc, dec, reset} state;
+enum states{start, init, inc, dec, reset, press} state;
 
 	unsigned char A0; //button A0
 	unsigned char A1; //button A1
 	unsigned char tmpB; //hold temporary value of portC
-
+	unsigned char counter = 0;
 
 void Tick(){
 	A0 = ~PINA & 0x01;
@@ -49,26 +49,28 @@ void Tick(){
 			break;
 
 		case inc:
-			if(A0 && !A1){
-				state = inc; 
-			}
-			else if(A0 && A1){
-				state = reset;
-			}
-			else
-				state = init;
+		//	if(A0 && !A1){
+		//		state = inc; 
+		//	}
+		//	else if(A0 && A1){
+		//		state = reset;
+		//	}
+		//	else
+		//		state = init;
+		//	break;
+		        state = press;
 			break;
 
 		case dec:
-			if(!A0 && A1){
-				state = dec;
-			}
-			else if(A0 && A1){
-				state = reset;
-			}
-			else
-				state = init;
-			
+			//if(!A0 && A1){
+			//	state = dec;
+			//}
+			//else if(A0 && A1){
+			//	state = reset;
+		//	}
+		//	else
+		//		state = init;
+			state = press;
 			break;
 
 		case reset:
@@ -78,6 +80,20 @@ void Tick(){
 			else
 				state = init;
 			break;
+
+		case press:
+			if(A0 && !A1) {
+				state = press;
+				if(counter >=10) {
+					state = init;
+					counter = 0;
+				}
+			}
+			else {
+				state = init;
+			}
+			break;
+
 	
 	}
 	switch(state){ // State actions
@@ -97,6 +113,9 @@ void Tick(){
 		case reset:
 			tmpB = 0;
 			break;
+
+		case press:
+			counter++;
 	
 	}
 }
