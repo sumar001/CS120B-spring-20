@@ -15,7 +15,144 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
-enum states{start, init, inc, dec, reset} state;
+
+enum States {Start, INIT, INC, DEC, WAIT, RESET}state;
+
+void Tick(){
+	switch(state){ //Transitions
+		case Start:
+		{
+			state = INIT;
+			break;
+		}
+		
+		case INIT:
+		if((~PINA & 0x03) == 0x01)
+		{
+			state = INC; break;
+		}
+		else if((~PINA & 0x03) == 0x02)
+		{
+			state = DEC; break;
+		}
+		else if((~PINA & 0x03) == 0x03)
+		{
+			state = RESET; break;
+		}
+		else
+		{
+			state = INIT; break;
+		}
+		
+		case INC:
+		state = WAIT;
+		break;
+		
+		case DEC:
+		state = WAIT;
+		break;
+		
+		case WAIT:
+		/*
+		if(((~PINA & 0x03) == 0x01) || ((~PINA & 0x03) == 0x02))
+		{
+			state = WAIT; break;
+		}
+		*/
+		if((~PINA & 0x03) == 0x01){
+			state = DEC;break;
+		}
+		else if((~PINA & 0x03) == 0x02){
+			state = INC;break;
+		}
+		else if((~PINA & 0x03) == 0x03)
+		{
+			state = RESET; break;
+		}
+		else if ((~PINA & 0x03) == 0x00){
+			state = WAIT; break;
+		}
+		else
+		{
+			state = INIT; break;
+		}
+		
+		case RESET:
+		if(((~PINA & 0x03) == 0x01) || ((~PINA & 0x03) == 0x02))
+		{
+			state = RESET; break;
+		}
+		else
+		{
+			state = INIT; break;
+		}
+		
+		default:
+		break;
+	}
+	switch(state){ //State actions
+		case Start:
+		{
+			PORTB = 0x07;
+		}
+		break;
+		
+		case INIT:
+		break;
+		
+		case INC:
+		{
+			if(PORTB >= 0x09)
+			{
+				PORTB = 0x09; break;
+			}
+			else
+			{
+				PORTB = PORTB + 0x01; break;
+			}
+		}
+		
+		case DEC:
+		{
+			if(PORTB <= 0x00)
+			{
+				PORTB = 0x00; break;
+			}
+			else
+			{
+				PORTB = PORTB - 0x01; break;
+			}
+		}
+		
+		case WAIT:
+		break;
+		
+		case RESET:
+		{
+			PORTB = 0x00; break;
+		}
+	}
+}
+
+int main(void)
+{
+	DDRA = 0x00;PORTA = 0xFF;
+	DDRB = 0xFF;PORTB = 0x07;
+	TimerSet(10);
+	TimerOn();
+	state = Start;
+	while(1) {
+		Tick();
+		while (!TimerFlag);
+		TimerFlag = 0;
+		// Note: For the above a better style would use a synchSM with TickSM()
+		// This example just illustrates the use of the ISR and flag
+	}
+}
+
+
+
+/*enum states{start, init, inc, dec, reset} state;
 
 	unsigned char A0; //button A0
 	unsigned char A1; //button A1
@@ -116,3 +253,4 @@ int main(void)
 		PORTB = tmpB;
 	}
 }
+*/
