@@ -7,7 +7,7 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
- // Demo: 
+ // Demo: https://drive.google.com/file/d/1GhkuVT9mRl-tu1DEecPLb-ysNX6TS4ZO/view?usp=sharing 
 
 #include <avr/io.h>
 #include <timer.h>
@@ -18,12 +18,12 @@
 
 			
 
-enum states{start, init, inc, dec, reset, press} state;
+enum states{start, init, inc, dec, reset, b_hold} state;
 
 	unsigned char A0; //button A0
 	unsigned char A1; //button A1
-	unsigned char tmpB; //hold temporary value of portC
-	unsigned char counter = 0;
+	unsigned char tmpB; //hold temporary value of portB
+	unsigned char i = 0; //counter => so that if button is held, it will inc/dec at a rate of 1ms
 
 void Tick(){
 	A0 = ~PINA & 0x01;
@@ -58,7 +58,7 @@ void Tick(){
 		//	else
 		//		state = init;
 		//	break;
-		        state = press;
+		        state = b_hold;
 			break;
 
 		case dec:
@@ -70,7 +70,7 @@ void Tick(){
 		//	}
 		//	else
 		//		state = init;
-			state = press;
+			state = b_hold;
 			break;
 
 		case reset:
@@ -81,20 +81,20 @@ void Tick(){
 				state = init;
 			break;
 
-		case press:
+		case b_hold:
 			if(A0 && !A1) {
-				state = press;
-				if(counter >=10) {
+				state = b_hold;
+				if(i >= 10) {
 					state = init;
-					counter = 0;
+					i = 0;
 				}
 			}
 
 			else if(!A0 && A1) {
-				state = press;
-				if(counter >=10) {
+				state = b_hold;
+				if(i >= 10) {
 					state = init;
-					counter = 0;
+					i = 0;
 				}
 			}
 			else {
@@ -122,8 +122,8 @@ void Tick(){
 			tmpB = 0;
 			break;
 
-		case press:
-			counter++;
+		case b_hold:
+			i++;
 	
 	}
 }

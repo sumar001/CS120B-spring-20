@@ -1,8 +1,16 @@
-Breakpoint 1 at 0x3a4: file source/main.c, line 134.
+Breakpoint 1 at 0x3ba: file source/main.c, line 142.
 Note: automatically using hardware breakpoints for read-only addresses.
 ======================================================
 Running all tests..."
 
-"Counter starts at 7.. PINA: 0xFF => PORTB: 0x07"..."Pressing Increment.. PINA: 0xFE  => PORTB: 0x08"...test/tests.gdb:54: Error in sourced command file:
-Undefined command: "".  Try "help".
-Remote doesn't know how to detach
+"Counter starts at 7.. PINA: 0xFF => PORTB: 0x07"..."Pressing Increment.. PINA: 0xFE  => PORTB: 0x08"..."PINA: 0xFE => PORTB: 0X09"...
+	Expected 0x09 
+	PORTB '0x800025:	0x08
+"PINA: 0xFF => PORTB: 0x09"...
+	Expected 0x09 
+	PORTB '0x800025:	0x08
+"PINA: 0xFD => PORTB: 0x08"...
+	Expected 0x08 
+	PORTB '0x800025:	0x07
+"PINA: 0xFD => PORTB: 0x07"..."PINA: 0xFF => PORTB: 0x07"...======================================================
+Quitting: Remote doesn't know how to detach
