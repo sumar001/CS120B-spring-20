@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *  Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #6  Exercise #3
+ *	Assignment: Lab #6  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -14,130 +14,234 @@
 #include "simAVRHeader.h"
 #endif
 
-enum States{start, inc, dec, reset, hold1,hold2} state;
+unsigned char A = 0x00; //button
+  unsigned char tmpB = 0x00;
+  unsigned char result = 0x00;
+  unsigned char i = 0x00; //counter
 
-unsigned char A0; //PA0 --> button0
-unsigned char A1; //PA1 --> button1
 
-unsigned char tmpC;
-
+enum States{start, led1, led2, led3, hold1, hold2, hold3}state;
 
 void Tick(){
-	A0 = PINA & 0x01;
-	A1 = PINA & 0x02;
-		
-	switch(state){ // Transitions
+	switch (state) // Transitions
+	{
 		case start:
-			if(!A0 && !A1){
-				state = start;
-			}
-			else if(A0 && !A1){
-				state = inc;
-			}
-			else if(!A0 && A1){
-				state = dec;
-			}
-			else if(A0 && A1){
-				state = reset;
-			}
+			state = led1;
 			break;
-		
-		case inc:
-			if(A0 && A1){
-				state = reset;
+
+		case led1:
+			if(A){
+				state = hold1;
 			}
 			else{
-				state = hold2;
+				state = led2;
 			}
 			break;
-		
-		case dec:
-			if(A0 && A1){
-				state = reset;
-			}
-			else{
-				state = hold2;
-			}
-			break;
-		
-		case reset:
-			if(!A0 && !A1){
-				state = start;
-			}
-			else if (A0 && !A1){
-				state = inc;
-			}
-			else if(!A0 && A1){
-				state = dec;
-			}
-			else if(A0 && A1){
-				state = reset;
-			}
-			break;
-		
+
 		case hold1:
-			if(A0 && A1){
-				state = reset;
-			}
-			else if(A0 && !A1){
-				state = inc;
-			}
-			else if(!A0 && A1){
-				state = dec;
+			if(A){
+				state = led1;
 			}
 			else{
 				state = hold1;
 			}
 			break;
-		
-		case hold2:
-			if(!A0 && !A1){
-				state = hold1;
+
+		case led2:
+			if(A){
+				state = hold2;
 			}
-			else if(A0 && A1){
-				state = reset;
+
+			else if(i % 2 == 0){
+				state = led1;
+				i++;
+			}
+
+			else{
+				state = led3;
+			}
+			break;
+
+		case hold2:
+			if(A){
+				state = led1;
 			}
 			else{
 				state = hold2;
 			}
+			break;
+
+		case led3:
+			if(A){
+				state = hold3;
+			}
+
+			else{
+				state = led2;
+				i++;
+			}
+			break;
+
+		case hold3:
+			if(A){
+				state = led1;
+			}
+			else{
+				state = hold3;
+			}
+			break;
+	}
+	switch (state){ // State actions
+		case led1:
+			tmpB = 0x01;
+			break;
+
+		case hold1:
+			tmpB = 0x01;
+			break;
+
+		case led2:
+			tmpB = 0x02;
+			break;
+
+		case hold2:
+			tmpB = 0x02;
+			break;
+
+		case led3:
+			tmpB = 0x04;
+			break;
+
+		case hold3:
+			tmpB = 0x04;
+			break;
+
+	}
+  }
+  
+
+  int main()
+  {
+	  DDRA = 0x00; PORTA = 0xFF; // DDRA for input Button
+	  DDRB = 0xFF; PORTB = 0x00; // DDRB for Led
+
+	  TimerSet(300);
+	  TimerOn();
+
+	  state = start;
+
+	  while(1) {
+		 A = ~PINA & 0x01;
+		
+		Tick();
+		while (!TimerFlag){}
+		TimerFlag = 0;
+		PORTB = tmpB;
+		  
+	  }
+	  return 0;
+  }
+
+/*
+	unsigned char button = 0x00;
+	unsigned char tmpB = 0x00;
+
+enum States{Init, Led1, Led2, Led3, hold1, hold2, hold3} state;
+
+void Tick() {
+	switch(state) {
+		case Init: 
+			state = Led1;
+			break;
+
+		case Led1:
+			if(button)
+				state = hold1;
+			else
+				state = Led2;
+			break;
+
+		case hold1:
+			if(button)
+				state = Led1;
+			else
+				state = hold1;
+			break;
+
+		case Led2:
+			if(button)
+				state = hold2;
+			else
+				state = Led3;
+			break;
+
+		case hold2:
+			if(button)
+				state = Led2;
+			else
+				state = hold2;
+			break;
+
+		case Led3:
+			if(button)
+				state = hold3;
+			else
+				state = Led1;
+			break;
+
+		case hold3:
+			if(button)
+				state = Led3;
+			else
+				state = hold3;
+			break;
+	}
+
+	switch(state) {
+		case Led1:
+			tmpB = 0x01;
+			break;
+
+		case hold1:
+			tmpB = 0x01;
+			break;
+
+		case Led2:
+			tmpB = 0x02;
+			break;
+
+		case hold2:
+			tmpB = 0x02;
+			break;
+
+		case Led3:
+			tmpB = 0x04;
 			break;
 			
+		case hold3:
+			tmpB = 0x04;
+			break;
 	}
-	switch(state){ // State actions
-		case start:
-			break;
-		case inc:
-			if(tmpC < 9){
-				tmpC += 1;
-			}
-			break;
-		case dec:
-			if(tmpC > 0){
-				tmpC -= 1;
-			}
-			break;
-		case reset:
-			tmpC = 0;
-			break;
-	}			
 }
 
-int main(void)
+int main()
 {
-	DDRA = 0x00; PORTA = 0xFF; // Configure port A's 8 pins as inputs
-	DDRC = 0xFF; PORTC = 0x00; // Configure port C's 8 pins as outputs
-										// initialize to 0s
-																				
-	state = start;
-	tmpC = 0x07;
+	DDRB = 0xFF; PORTB = 0x00;
+	DDRA = 0x00; PORTA = 0xFF;
 
-	while (1) 
-    {		
+	TimerSet(300);
+	TimerOn();
+
+	state = Init;
+
+	while(1) {
+		button = ~PINA & 0x08;
 		Tick();
-		PORTC = tmpC;
 
+		while(!TimerFlag);
+		TimerFlag = 0;
+
+		PORTB = tmpB;
 	}
-
-	return 0;
-}
-
+	return 1;
+}*/
