@@ -14,55 +14,64 @@
 #include "simAVRHeader.h"
 #endif
 
-	unsigned char button = 0x00;
+	unsigned char A = 0x00; //PA0
 	unsigned char tmpB = 0x00;
+	unsigned char i = 0x00; 
 
-enum States{Init, Led1, Led2, Led3, hold1, hold2, hold3} state;
+enum States{start, Led1, Led2, Led3, hold1, hold2, hold3} state;
 
 void Tick() {
 	switch(state) {
-		case Init: 
+		case start: 
 			state = Led1;
 			break;
 
 		case Led1:
-			if(button)
+			if(A)
 				state = hold1;
 			else
 				state = Led2;
 			break;
 
 		case hold1:
-			if(button)
+			if(A)
 				state = Led1;
 			else
 				state = hold1;
 			break;
 
 		case Led2:
-			if(button)
+			if(A)
 				state = hold2;
-			else
+			else if(i % 2 == 0){
+				state = Led1;
+				i++ ;
+			}
+			else {
 				state = Led3;
+			}
 			break;
 
 		case hold2:
-			if(button)
-				state = Led2;
+			if(A)
+				state = Led1;
 			else
 				state = hold2;
 			break;
 
 		case Led3:
-			if(button)
+			if(A)
 				state = hold3;
-			else
-				state = Led1;
+			else {
+				state = Led2;
+				i++ ;
+			}
+
 			break;
 
 		case hold3:
-			if(button)
-				state = Led3;
+			if(A)
+				state = Led1;
 			else
 				state = hold3;
 			break;
@@ -97,16 +106,16 @@ void Tick() {
 
 int main()
 {
-	DDRB = 0xFF; PORTB = 0x00;
 	DDRA = 0x00; PORTA = 0xFF;
+	DDRB = 0xFF; PORTB = 0x00;
 
 	TimerSet(300);
 	TimerOn();
 
-	state = Init;
+	state = start;
 
 	while(1) {
-		button = ~PINA & 0x08;
+		A = ~PINA & 0x01;
 		Tick();
 
 		while(!TimerFlag);
