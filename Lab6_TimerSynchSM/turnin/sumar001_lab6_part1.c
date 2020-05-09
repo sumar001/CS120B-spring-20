@@ -7,6 +7,8 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
+// Demo: https://drive.google.com/file/d/1f37ZS1ZIEU2ZNSuoVOKBCtugup4ywOAM/view?usp=sharing
+
 #include <avr/io.h>
 #include <timer.h>
 
@@ -14,9 +16,6 @@
 #include "simAVRHeader.h"
 #endif
 
-//==================================================================
-//starting PART !
-//=================================================================
 enum States {Init, Led1, Led2, Led3} state;
 
 	unsigned char tmpB = 0x00;
@@ -58,8 +57,7 @@ void Tick() {
 
 int main(void) {
     /* Insert DDR and PORT initializations */
-	DDRB = 0XFF;   //Set PortB to output
-	PORTB = 0x00;  //Init portB to 0s
+	DDRB = 0XFF; PORTB = 0x00; 
 
 	TimerSet(1000);
 	TimerOn();
