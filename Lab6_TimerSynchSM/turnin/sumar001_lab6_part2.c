@@ -16,74 +16,87 @@
 #include "simAVRHeader.h"
 #endif
 
-enum dummyMachine {Start, Light1, Light2, Light3, Light4, wait,restart}state;
+enum states {Start, Led1, Led2, Led3, Led_dummy, wait, reset}state;
 
 	unsigned char A = 0x00;
 
 void Tick(){
 
 	A = (~PINA & 0x01);
+
 	switch(state){ //transitions
 		case Start:
 		{
 			PORTB = 0x00;
-			state = Light1;
+			state = Led1;
 			break;
 		}
-		case Light1:
+		case Led1:
 		{
 			if(A){
-			state = wait; break;
+			state = wait; 
+			break;
 			}
 			else{
-			state = Light2; break;
+			state = Led2;
+			 break;
 			}
 		}
-		case Light2:
+		case Led2:
 		{
 			if(A){		
-				state = wait; break;
+				state = wait; 
+				break;
 				
 			}
 			else{
-			state = Light3; break;
+			state = Led3; 
+			break;
 			}
 		}
-		case Light3:
+		case Led3:
 		{
 			if(A){
-				state = wait; break;
+				state = wait; 
+				break;
 			}
 			else{
-			state = Light4; break;
+			state = Led_dummy;
+			 break;
 			}
 		}
-		case Light4:
+		case Led_dummy:
 		{
 			if(A){
-			state = wait; break;
+			state = wait; 
+			break;
 			}
 			else{
-			state = Light1; break;
+			state = Led1; 
+			break;
 			}
 		}
 		case wait:
 			if(A)
 			{
-				state = wait; break;
+				state = wait; 
+				break;
 			}
 			else
 			{
-				state = restart; break;
+				state = reset;
+				 break;
 			}
-		case restart:
+		case reset:
 			if(A)
 			{
-				state = Light1; break;
+				state = Led1; 
+				break;
 			}
 			else
 			{
-				state = restart; break;
+				state = reset; 
+				break;
 			}
 		default:
 		break;
@@ -92,21 +105,25 @@ void Tick(){
 		case Start:{
 		break;
 		}
-		case Light1:
+		case Led1:
 		{
-			PORTB = 0x01; break;
+			PORTB = 0x01; 
+			break;
 		}
-		case Light2:
+		case Led2:
 		{
-			PORTB = 0x02; break;
+			PORTB = 0x02; 
+			break;
 		}
-		case Light3:
+		case Led3:
 		{
-			PORTB = 0x04; break;
+			PORTB = 0x04; 
+			break;
 		}
-		case Light4:
+		case Led_dummy:
 		{
-			PORTB = 0x02; break;
+			PORTB = 0x02; 
+			break;
 		}
 		default:
 		break;
