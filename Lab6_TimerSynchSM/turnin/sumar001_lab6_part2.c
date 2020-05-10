@@ -7,7 +7,7 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
- // Demo: 
+ // Demo: https://drive.google.com/file/d/10Q1qbAuI7HnRNWWv9Yeq71VVhnyKABzB/view?usp=sharing 
 
 #include <avr/io.h>
 #include <timer.h>
@@ -17,114 +17,131 @@
 #endif
 
 			
-unsigned char A = 0x00; //PA0
+        unsigned char A = 0x00; //PA0
 	unsigned char tmpB = 0x00;
-	unsigned char i = 0x00; 
 
-enum States{start, Led1, Led2, Led3, hold1, hold2, hold3} state;
+enum state {Start, Led1, Led2, Led3, dumy_Led, wait, reset}state;
+void Tick(){
 
-void Tick() {
-	switch(state) {
-		case start: 
+	A = ~PINA & 0x01;
+
+	switch(state){ //transitions
+		case Start:
+		{
+			tmpB = 0x00;
 			state = Led1;
 			break;
-
+		}
 		case Led1:
-			if(A)
-				state = hold1;
-			else
-				state = Led2;
+		{
+			if(A) {
+			state = wait; 
 			break;
-
-		case hold1:
-			if(A)
-				state = Led1;
-			else
-				state = hold1;
+			}
+			else{
+			state = Led2; 
 			break;
-
+			}
+		}
 		case Led2:
-			if(A)
-				state = hold2;
-			else if(i % 2 == 0){
-				state = Led1;
-				i++ ;
+		{
+			if(A){		
+				state = wait; 
+				break;
+				
 			}
-			else {
-				state = Led3;
+			else{
+			state = Led3; 
+			break;
 			}
-			break;
-
-		case hold2:
-			if(A)
-				state = Led1;
-			else
-				state = hold2;
-			break;
-
+		}
 		case Led3:
-			if(A)
-				state = hold3;
-			else {
-				state = Led2;
-				i++ ;
+		{
+			if(A){
+				state = wait; 
+				break;
 			}
-
+			else{
+			state = dumy_Led; 
 			break;
-
-		case hold3:
+			}
+		}
+		case dumy_Led:
+		{
+			if(A){
+			state = wait; 
+			break;
+			}
+			else{
+			state = Led1; 
+			break;
+			}
+		}
+		case wait:
 			if(A)
-				state = Led1;
+			{
+				state = wait; 
+				break;
+			}
 			else
-				state = hold3;
-			break;
+			{
+				state = reset;
+				 break;
+			}
+		case reset:
+			if(A)
+			{
+				state = Led1; 
+				break;
+			}
+			else
+			{
+				state = reset; 
+				break;
+			}
+		default:
+		break;
 	}
-
-	switch(state) {
+	switch(state){ 
+		case Start:{
+		break;
+		}
 		case Led1:
-			tmpB = 0x01;
+		{
+			tmpB = 0x01; 
 			break;
-
-		case hold1:
-			tmpB = 0x01;
-			break;
-
+		}
 		case Led2:
-			tmpB = 0x02;
+		{
+			tmpB = 0x02; 
 			break;
-
-		case hold2:
-			tmpB = 0x02;
-			break;
-
+		}
 		case Led3:
-			tmpB = 0x04;
+		{
+			tmpB = 0x04; 
 			break;
-			
-		case hold3:
-			tmpB = 0x04;
+		}
+		case dumy_Led:
+		{
+			tmpB = 0x02; 
 			break;
+		}
+		default:
+		break;
 	}
 }
 
-int main()
+int main(void)
 {
-	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0xFF; PORTB = 0x00;
-
+	DDRA = 0x00;PORTA = 0xFF;
+	DDRB = 0xFF;PORTB = 0x00;
 	TimerSet(300);
 	TimerOn();
-
-	state = start;
-
+	state = Start;
 	while(1) {
-		A = ~PINA & 0x01;
-		Tick();
-
-		while(!TimerFlag);
-		TimerFlag = 0;
-
 		PORTB = tmpB;
+		Tick();
+		while (!TimerFlag);
+		TimerFlag = 0;
 	}
-	return 1;
 }
