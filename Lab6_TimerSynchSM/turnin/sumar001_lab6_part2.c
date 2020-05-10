@@ -7,6 +7,8 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
+ // Demo: 
+
 #include <avr/io.h>
 #include <timer.h>
 
@@ -14,7 +16,8 @@
 #include "simAVRHeader.h"
 #endif
 
-	unsigned char A = 0x00; //PA0
+			
+unsigned char A = 0x00; //PA0
 	unsigned char tmpB = 0x00;
 	unsigned char i = 0x00; 
 

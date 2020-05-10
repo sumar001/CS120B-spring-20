@@ -23,7 +23,7 @@ enum states{start, init, inc, dec, reset, b_hold} state;
 	unsigned char A0; //button A0
 	unsigned char A1; //button A1
 	unsigned char tmpB; //hold temporary value of portB
-	unsigned char i = 0; //counter => so that if button is held, it will inc/dec at a rate of 1ms
+	unsigned char i = 0; //counter => so that if button is held, it will inc/dec at a rate of 1s
 
 void Tick(){
 	A0 = ~PINA & 0x01;
