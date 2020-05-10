@@ -16,88 +16,74 @@
 #include "simAVRHeader.h"
 #endif
 
-			
-        unsigned char A = 0x00; //PA0
-	unsigned char tmpB = 0x00;
+enum dummyMachine {Start, Light1, Light2, Light3, Light4, wait,restart}state;
 
-enum state {Start, Led1, Led2, Led3, dumy_Led, wait, reset}state;
+	unsigned char A = 0x00;
+
 void Tick(){
 
-	A = ~PINA & 0x01;
-
+	A = (~PINA & 0x01);
 	switch(state){ //transitions
 		case Start:
 		{
-			tmpB = 0x00;
-			state = Led1;
+			PORTB = 0x00;
+			state = Light1;
 			break;
 		}
-		case Led1:
+		case Light1:
 		{
-			if(A) {
-			state = wait; 
-			break;
+			if(A){
+			state = wait; break;
 			}
 			else{
-			state = Led2; 
-			break;
+			state = Light2; break;
 			}
 		}
-		case Led2:
+		case Light2:
 		{
 			if(A){		
-				state = wait; 
-				break;
+				state = wait; break;
 				
 			}
 			else{
-			state = Led3; 
-			break;
+			state = Light3; break;
 			}
 		}
-		case Led3:
+		case Light3:
 		{
 			if(A){
-				state = wait; 
-				break;
+				state = wait; break;
 			}
 			else{
-			state = dumy_Led; 
-			break;
+			state = Light4; break;
 			}
 		}
-		case dumy_Led:
+		case Light4:
 		{
 			if(A){
-			state = wait; 
-			break;
+			state = wait; break;
 			}
 			else{
-			state = Led1; 
-			break;
+			state = Light1; break;
 			}
 		}
 		case wait:
 			if(A)
 			{
-				state = wait; 
-				break;
+				state = wait; break;
 			}
 			else
 			{
-				state = reset;
-				 break;
+				state = restart; break;
 			}
-		case reset:
+		case restart:
 			if(A)
 			{
-				state = Led1; 
-				break;
+				state = Light1; break;
 			}
 			else
 			{
-				state = reset; 
-				break;
+				state = restart; break;
 			}
 		default:
 		break;
@@ -106,25 +92,21 @@ void Tick(){
 		case Start:{
 		break;
 		}
-		case Led1:
+		case Light1:
 		{
-			tmpB = 0x01; 
-			break;
+			PORTB = 0x01; break;
 		}
-		case Led2:
+		case Light2:
 		{
-			tmpB = 0x02; 
-			break;
+			PORTB = 0x02; break;
 		}
-		case Led3:
+		case Light3:
 		{
-			tmpB = 0x04; 
-			break;
+			PORTB = 0x04; break;
 		}
-		case dumy_Led:
+		case Light4:
 		{
-			tmpB = 0x02; 
-			break;
+			PORTB = 0x02; break;
 		}
 		default:
 		break;
@@ -139,9 +121,8 @@ int main(void)
 	TimerOn();
 	state = Start;
 	while(1) {
-		PORTB = tmpB;
 		Tick();
 		while (!TimerFlag);
 		TimerFlag = 0;
 	}
-}
+}		
