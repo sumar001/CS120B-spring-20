@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *  Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #8  Exercise #3
+ *	Assignment: Lab #8  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -30,21 +30,12 @@ int main(void)
 
 	ADC_init();
 
-	unsigned char max = 223; //1+2+4+8+16+64+128
-// 	unsigned char min = 71;
-	unsigned char tmpB = 0x00;
-
 	/*Insert your solution below */
 	while(1){
 	
 	unsigned short my_short = ADC; //Storing value of ADC
-		
-	 if(my_short >= max/2) {
-	 	tmpB = 0x01;
-	 }
-	 else {
-	tmpB = 0x00;
-	 }
-	  PORTB = tmpB;
+	PORTB = (char)my_short;
+	PORTD = (char)(my_short >> 8);
+	
 	}
 }
