@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *  Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #8  Exercise #4
+ *	Assignment: Lab #8  Exercise #1
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -31,47 +31,12 @@ int main(void)
 
 	ADC_init();
 
-// 	unsigned char min = 71;
-	unsigned char max  = 223; //1+2+4+8+16+64+128
-	unsigned short x    = (max/8) ;
-	unsigned short y    = 0x00;
-	unsigned char tmpB = 0x00;
-//	Insert your solution below 
+	/*Insert your solution below */
 	while(1){
-		y = ADC;
+	
+	unsigned short my_short = ADC; //Storing value of ADC
+	PORTB = (char)my_short;
+	PORTD = (char)(my_short >> 8);
 
-		if(y <= x) {
-			tmpB = 0x01;
-		  }
-
-		else if(y <= (2*x)) {
-			tmpB = 0x03;
-		}
-
-		else if(y <= (3*x)) {
-			tmpB = 0x07;
-		}
-
-		else if(y <= (4*x)) {
-			tmpB = 0x0F;
-		}
-
-		else if(y <= (5*x)) {
-			tmpB = 0x1F;
-		}
-
-		else if(y <= (6*x)) {
-			tmpB = 0x3F;
-		}
-
-		else if(y <= (7*x)) {
-			tmpB = 0x7F;
-		}
-
-		else {
-			tmpB = 0xFF;
-		     }
-
-		 PORTB = tmpB;	
 	}
 }
