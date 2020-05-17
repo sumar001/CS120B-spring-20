@@ -57,9 +57,9 @@ enum States{start, init, c4, d4, e4}state;
 
 
 void Tick(){
-	 unsigned char B0 = (~PINA & 0x01); //button
-	 unsigned char B1 = (~PINA & 0x02);
-	 unsigned char B2 = (~PINA & 0x04);
+	 unsigned char B0 = (~PINA & 0x01); //button 1
+	 unsigned char B1 = (~PINA & 0x02); //button 2
+	 unsigned char B2 = (~PINA & 0x04); //button 3
 
 	switch(state){ // Transitions
 		case start:
