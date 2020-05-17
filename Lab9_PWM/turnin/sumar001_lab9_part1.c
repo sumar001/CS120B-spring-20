@@ -57,20 +57,23 @@ enum States{start, init, c4, d4, e4}state;
 
 
 void Tick(){
-	 unsigned char B = (~PINA & 0x07); //button
+	 unsigned char B0 = (~PINA & 0x01); //button
+	 unsigned char B1 = (~PINA & 0x02);
+	 unsigned char B2 = (~PINA & 0x04);
+
 	switch(state){ // Transitions
 		case start:
 			state = init;
 			break;
 
 		case init:
-			if(B == 0x01){
+			if(B0 && !B1 && !B2){
 				state = c4;
 			}
-			else if(B == 0x02){
+			else if(!B0 && B1 && !B2){
 				state = d4;			
 			}
-			else if(B == 0x04){
+			else if(!B0 && !B1 && B2){
 				state = e4;
 			}
 			else{
@@ -79,7 +82,7 @@ void Tick(){
 			break;
 
 		case c4:
-			if(B == 0x01){
+			if(B0 && !B1 && !B2){
 				state = c4;
 			}
 			else{
@@ -88,7 +91,7 @@ void Tick(){
 			break;
 
 		case d4:
-			if(B == 0x02){
+			if(!B0 && B1 && !B2){
 				state = d4;
 			}
 			else{
@@ -97,7 +100,7 @@ void Tick(){
 			break;
 
 		case e4:
-			if(B == 0x04){
+			if(!B0 && !B1 && B2){
 				state = e4;
 			}
 			else{
