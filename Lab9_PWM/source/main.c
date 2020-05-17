@@ -54,91 +54,65 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum STATES { start, init, press, release, wait, play } state;
+enum States{off, play}state;
 
-unsigned char button_on=0;
-double sound_arr[5]={ 261.63, 329.63, 392.00, 493.88, 523.25 };
-unsigned char sound_lasting[5]={3, 1, 2, 1, 6 };
-unsigned char sound_waiting[5]={1, 2, 1, 2, 0 };
-unsigned char i=0;
-unsigned char cnt=0;
 
-void Tick(){
-	
-	unsigned char button1=~PINA & 0x01;
-	unsigned char button2=~PINA & 0x02;
-	unsigned char button3=~PINA & 0x04;
-	
+unsigned char buttonPress = 0x00;
 
-	
-	
-	switch (state){
-		
-		case start:	
-							state = init;
-							break;
-					
-		case init:			
-							
-							state=(button1) ? press : init;
-							break;
-					
-		case press:		
-							state=(button1) ? press : release;
-							break;			
-					
-		case release:				state=wait;
-							break;
+const double notes[26] = {329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 392.00, 261.63, 293.66, 329.63, 349.23, 349.23, 349.23, 349.23, 349.23, 329.63, 329.63, 329.63, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66, 392.00 };
+unsigned char i = 0x00;
+unsigned char j = 0x00;
 
-		case wait:				if( cnt < sound_waiting[i] ){
-								cnt=cnt+1;
-							}else{
-							state=play;
-							cnt=0;
-							}
+void button_Tick(){
+	buttonPress = ~PINA & 0x01;
+	switch(state){ // Transitions
+		case off:
+			if(buttonPress){
+				state = play;
+				i = 0;
+				j = 0;
+			}
+			else
+				state= off;
+			break;
+		case play:
+			if(j < 2){
+				state = play;
+			}
+			else{
+				state = off;
+			}
+			if(i > 25){
+				j++; 
+			}
+			i++;
 
-							break;
-
-		case play:				set_PWM( sound_arr[i] );
-
-							if( cnt < sound_lasting[i] ){
-								cnt=cnt+1;
-							}else{
-							state=release;
-							cnt=0;
-							++i;
-							}
-
-							if( i==5 ){
-							state=start;
-							i=0;
-							set_PWM( 0 );
-							}
-
-							break;
-					
-		default: 
-							state=start;
-							break;
-		}
-
+			break;
+	}
+	switch(state){ // State actions
+		case off:
+			set_PWM(0);
+			break;
+		case play:
+			set_PWM(notes[i]);
+			set_PWM(0);
+			break;
+	}
 }
+
 
 int main(void)
 {
-    /* Replace with your application code */
-	DDRA=0x00; PORTA=0xFF;
-	DDRB=0XFF; PORTB=0x00;
+	DDRA = 0x00; PORTA = 0xFF; // A input initialized to 0xFF
+	DDRB = 0xFF; PORTB = 0x00; // B output initialized to 0x00
 
+	TimerSet(400);
+	TimerOn();
 	PWM_on();
-	TimerSet(100);   
-	TimerOn(); 
-	
-    while (1) 
-    {
-		Tick();
-
-		while(!TimerFlag);
-		TimerFlag=0;
-    }
+	state = off;
+	while(1){
+		button_Tick();
+		while(!TimerFlag){}
+		TimerFlag = 0;
+	}
 }
