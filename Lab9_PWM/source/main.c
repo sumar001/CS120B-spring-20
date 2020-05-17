@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *      Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #9  Exercise #1
+ *	Assignment: Lab #9  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -53,92 +53,104 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States{start, init, c4, d4, e4}state;
+num States{off, turnOff, on, compOn, up, waitUp, down, waitDown}state;
 
 
-void Tick(){
-	 unsigned char B0 = (~PINA & 0x01); //button
-	 unsigned char B1 = (~PINA & 0x02);
-	 unsigned char B2 = (~PINA & 0x04);
+unsigned char buttonPress = 0x00;
 
+const double notes[8] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25};
+unsigned char i = 0x00;
+
+void button_Tick(){
+	buttonPress = ~PINA & 0x07;
 	switch(state){ // Transitions
-		case start:
-			state = init;
+		case off:
+			if(buttonPress == 1)
+				state = on;
+			else
+				state = off;
 			break;
-
-		case init:
-			if(B0 && !B1 && !B2){
-				state = c4;
-			}
-			else if(!B0 && B1 && !B2){
-				state = d4;			
-			}
-			else if(!B0 && !B1 && B2){
-				state = e4;
-			}
-			else{
-				state = init;
-			}
+		case turnOff:
+			if(!(buttonPress == 1))
+				state = off;
+			else
+				state = turnOff;
 			break;
-
-		case c4:
-			if(B0 && !B1 && !B2){
-				state = c4;
-			}
-			else{
-				state = init;
-			}
+		case on:
+			if(buttonPress == 1)
+				state = on;
+			else
+				state = compOn;
 			break;
-
-		case d4:
-			if(!B0 && B1 && !B2){
-				state = d4;
+		case compOn:
+			if(buttonPress == 2){
+				if(i < 7)
+					i++;
+				state = up;
 			}
-			else{
-				state = init;
+			else if(buttonPress == 4){
+				if(i > 0)
+					i--;
+				state = down;
 			}
+			else if(buttonPress == 1)
+				state = turnOff;
+			else
+				state = compOn;
 			break;
-
-		case e4:
-			if(!B0 && !B1 && B2){
-				state = e4;
-			}
-			else{
-				state = init;
-			}
+		case up:
+			state = waitUp;
+			break;
+		case waitUp:
+			if(buttonPress == 2)
+				state = waitUp;
+			else
+				state = compOn;
+			break;
+		case down:
+			state = waitDown;
+			break;
+		case waitDown:
+			if(buttonPress == 4)
+				state = waitDown;
+			else
+				state = compOn;
 			break;
 	}
-
 	switch(state){ // State actions
-		case init:
-			set_PWM(0);
+		case off:
+			PWM_off();
+			break;
+		case turnOff:
+			break;
+		case on:
+			PWM_on();
+			break;
+		case compOn:
+			break;
+		case up:
+			set_PWM(notes[i]);
+			break;
+		case waitUp:
+			break;
+		case down:
+			set_PWM(notes[i]);
+			break;
+		case waitDown:
 			break;
 
-		case c4:
-			set_PWM(261.63);
-			break;
-
-		case d4:
-			set_PWM(293.66);
-			break;
-
-		case e4:
-			set_PWM(329.63);
-			break;
 	}
 }
 
-int main(void) {
-    /* Insert DDR and PORT initializations */
-      DDRA = 0x00; PORTA = 0xFF; // A input initialized to 0xFF
-      DDRB = 0xFF; PORTB = 0x00; // B output initialized to 0x00
 
+int main(void)
+{
+	DDRA = 0x00; PORTA = 0xFF; // A input initialized to 0xFF
+	DDRB = 0xFF; PORTB = 0x00; // B output initialized to 0x00
 	PWM_on();
-	state = start;
-
-    /* Insert your solution below */
-    while (1) {
-	Tick();
-    }
-    return 1;
+	state = off;
+	while(1){
+		button_Tick();
+	}
 }
+
