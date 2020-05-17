@@ -54,135 +54,91 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States {Start, WAIT, PLAY, DOWN, PAUSE, WAIT_2}state;
-double notes[18] = {220.00, 220.00, 220.00, 174.61, 261.63, 220.00, 174.61, 261.63, 220.00, 329.63, 329.63, 329.63, 349.23, 207.65, 174.61, 261.63, 220.00};
-char time[18] = {50, 50, 50, 37, 13, 50, 37, 13, 50, 50, 50, 50, 37, 13, 50, 37, 13, 50};
-unsigned char i = 0x00;
-unsigned char k = 0x00;
-unsigned char r = 0x00;
+enum STATES { start, init, press, release, wait, play } state;
 
-void Tick()
-{
-	switch(state) //transitions
-	{
-		case Start:
-		{
-			state = WAIT;
-			break;
-		}
-		case WAIT:
-		{
-			if((~PINA & 0x01) == 0x01)
-			{
-				state = PLAY; break;
-			}
-			else
-			{
-				state = WAIT; break;
-			}
-		}
+unsigned char button_on=0;
+double sound_arr[5]={ 261.63, 329.63, 392.00, 493.88, 523.25 };
+unsigned char sound_lasting[5]={3, 1, 2, 1, 6 };
+unsigned char sound_waiting[5]={1, 2, 1, 2, 0 };
+unsigned char i=0;
+unsigned char cnt=0;
+
+void Tick(){
+	
+	unsigned char button1=~PINA & 0x01;
+	unsigned char button2=~PINA & 0x02;
+	unsigned char button3=~PINA & 0x04;
+	
+
+	
+	
+	switch (state){
 		
-		case PLAY:
-		{
-			if(i <= time[k])
-			{
-				state = PLAY; break;
-			}
-			else if(i > time[k])
-			{
-				++r;
-				state = DOWN;
-				break;
-			}
+		case start:	
+							state = init;
+							break;
+					
+		case init:			
+							
+							state=(button1) ? press : init;
+							break;
+					
+		case press:		
+							state=(button1) ? press : release;
+							break;			
+					
+		case release:				state=wait;
+							break;
+
+		case wait:				if( cnt < sound_waiting[i] ){
+								cnt=cnt+1;
+							}else{
+							state=play;
+							cnt=0;
+							}
+
+							break;
+
+		case play:				set_PWM( sound_arr[i] );
+
+							if( cnt < sound_lasting[i] ){
+								cnt=cnt+1;
+							}else{
+							state=release;
+							cnt=0;
+							++i;
+							}
+
+							if( i==5 ){
+							state=start;
+							i=0;
+							set_PWM( 0 );
+							}
+
+							break;
+					
+		default: 
+							state=start;
+							break;
 		}
-		case DOWN:
-		{
-			if(r < 20)
-			{
-				++k;
-				state = PLAY;
-				break;
-			}
-			else if(r >= 20)
-			{
-				state = PAUSE; break;
-			}
-		}
-		
-		case PAUSE:
-		{
-			if((~PINA & 0x01) == 0x01)
-			{
-				state = WAIT_2; break;
-			}
-			else
-			{
-				state = PAUSE; break;
-			}
-		}
-		case WAIT_2:
-		{
-			if((~PINA & 0x01) == 0x01)
-			{
-				state = WAIT_2;
-				break;
-			}
-			else
-			{
-				state = WAIT;
-				break;
-			}
-		}
-		default:
-			break;
-	}
-	switch(state) //state actions
-	{
-		case Start:
-			break;
-			
-		case WAIT:
-		{
-			i = 0;
-			k = 0;
-			r = 0;
-			break;
-		}
-		
-		case PLAY:
-		{
-			set_PWM(notes[k]);
-			++i;
-			break;
-		}
-		
-		case DOWN:
-		{
-			set_PWM(0); break;
-		}
-		
-		case PAUSE:
-			break;
-		default:
-			break;
-	}
+
 }
-
 
 int main(void)
 {
-	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0xFF; PORTB = 0x00;
+    /* Replace with your application code */
+	DDRA=0x00; PORTA=0xFF;
+	DDRB=0XFF; PORTB=0x00;
+
 	PWM_on();
+	TimerSet(100);   
+	TimerOn(); 
 	
-	TimerSet(50);
-	TimerOn();
-	state = Start;
-    while(1)
+    while (1) 
     {
 		Tick();
-        while (!TimerFlag);
-        TimerFlag = 0;
+
+		while(!TimerFlag);
+		TimerFlag=0;
     }
 }
-
