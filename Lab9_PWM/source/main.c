@@ -1,14 +1,15 @@
 /*	Author: sumar001
  *      Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #9  Exercise #2
+ *	Assignment: Lab #9  Exercise #3
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
 #include <avr/io.h>
-#include <avr/interrupt.h>
+#include <timer.h>
+//#include <avr/interrupt.h>
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
@@ -53,111 +54,50 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States{ off, Off2, on, On2, inc, dec, hold1, hold2}state;
+
+enum States{off, play}state;
 
 
- unsigned char cnt = 0x00;
- const double freq[8] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25};
+unsigned char buttonPress = 0x00;
 
-void Tick(){
+const double notes[26] = {329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 392.00, 261.63, 293.66, 329.63, 349.23, 349.23, 349.23, 349.23, 349.23, 329.63, 329.63, 329.63, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66, 392.00 };
+unsigned char i = 0x00;
+unsigned char j = 0x00;
 
-	unsigned char B0 = (~PINA & 0x01); //button1
-	unsigned char B1 = (~PINA & 0x02); //button2
-	unsigned char B2 = (~PINA & 0x04); //button3
-
+void button_Tick(){
+	buttonPress = ~PINA & 0x01;
 	switch(state){ // Transitions
 		case off:
-			if(B0 && !B1 && !B2)
-				state = on;
-			else
-				state = off;
-			break;
-
-		case Off2:
-			if(!B0 && !B1 && !B2)        
-				state = off;
-			else
-				state = Off2;
-			break;
-
-		case on:
-			if(B0 && !B1 && !B2)
-				state = on;
-			else
-				state = On2;
-			break;
-
-		case On2:
-
-			if(!B0 && B1 && !B2){
-				if(cnt < 8)
-					cnt++;
-				state = inc;
+			if(buttonPress){
+				state = play;
+				i = 0;
+				j = 0;
 			}
-			else if(!B0 && !B1 && B2){
-				if(cnt > 0)
-					cnt--;
-				state = dec;
+			else
+				state= off;
+			break;
+		case play:
+			if(j < 2){
+				state = play;
 			}
-			else if(B0 && !B1 && !B2)
-				state = Off2;
-			else
-				state = On2;
-			break;
+			else{
+				state = off;
+			}
+			if(i > 25){
+				j++; 
+			}
+			i++;
 
-		case inc:
-			state = hold1;
-			break;
-
-		case hold1:
-			if(!B0 && B1 && !B2)
-				state = hold1;
-			else
-				state = On2;
-			break;
-
-		case dec:
-			state = hold2;
-			break;
-
-		case hold2:
-			if(!B0 && !B1 && B2)
-				state = hold2;
-			else
-				state = On2;
 			break;
 	}
-
 	switch(state){ // State actions
 		case off:
-			PWM_off();
+			set_PWM(0);
 			break;
-
-		case Off2:
+		case play:
+			set_PWM(notes[i]);
+			set_PWM(0);
 			break;
-
-		case on:
-			PWM_on();
-			set_PWM(261.63);
-			break;
-
-		case On2:
-			break;
-
-		case inc:
-			set_PWM(freq[cnt]);
-			break;
-
-		case hold1:
-			break;
-
-		case dec:
-			set_PWM(freq[cnt]);
-			break;
-
-		case hold2:
-			break;
-
 	}
 }
 
@@ -167,12 +107,13 @@ int main(void)
 	DDRA = 0x00; PORTA = 0xFF; // A input initialized to 0xFF
 	DDRB = 0xFF; PORTB = 0x00; // B output initialized to 0x00
 
+	TimerSet(400);
+	TimerOn();
 	PWM_on();
 	state = off;
-
 	while(1){
-
-		Tick();
+		button_Tick();
+		while(!TimerFlag){}
+		TimerFlag = 0;
 	}
 }
-
