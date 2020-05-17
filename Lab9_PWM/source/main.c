@@ -54,72 +54,72 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum STATES { start, init, press, release, wait, play } state;
+enum STATES { start, init, press, release, hold, play } state;
 
-unsigned char button_on=0;
-double sound_arr[5]={ 261.63, 329.63, 392.00, 493.88, 523.25 };
-unsigned char sound_lasting[5]={3, 1, 2, 1, 6 };
-unsigned char sound_waiting[5]={1, 2, 1, 2, 0 };
-unsigned char i=0;
+double sound_arr[17]={221.00, 691.00, 100.00, 250.00, 220.00, 175.11, 150.00, 365.67, 392.00, 392.00, 493.88, 523.25, 261.63, 329.63, 392.00, 493.88, 523.25 };
+unsigned char sound_lasting[17]={3, 1, 2, 1, 6, 1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 5, 4};
+unsigned char sound_waiting[17]={1, 2, 1, 2, 0, 3, 1, 4, 2, 4, 2, 1, 2, 3, 1, 2, 1 };
+unsigned char i = 0;
 unsigned char cnt=0;
 
 void Tick(){
 	
-	unsigned char button1=~PINA & 0x01;
-	unsigned char button2=~PINA & 0x02;
-	unsigned char button3=~PINA & 0x04;
-	
-
-	
+	unsigned char B0 = (~PINA & 0x01);
 	
 	switch (state){
 		
 		case start:	
-							state = init;
-							break;
+			state = init;
+			break;
 					
 		case init:			
-							
-							state=(button1) ? press : init;
-							break;
+			if(B0)
+				state = press;
+			else
+				state = init;
+			break;
 					
-		case press:		
-							state=(button1) ? press : release;
-							break;			
+		case press:
+			if(B0)
+				state = press;
+			else 
+				state = release;
+			break;
 					
-		case release:				state=wait;
-							break;
+		case release:	
+			state = hold;
+			break;
 
-		case wait:				if( cnt < sound_waiting[i] ){
-								cnt=cnt+1;
-							}else{
-							state=play;
-							cnt=0;
-							}
+		case hold:
+			if( cnt < sound_waiting[i] ){
+				cnt=cnt+i;
+			}
+			else{
+				state=play;
+				cnt=0;
+			    }
 
-							break;
+			break;
 
-		case play:				set_PWM( sound_arr[i] );
+		case play:				
+			set_PWM( sound_arr[i] );
+			if( cnt < sound_lasting[i] ){
+				cnt=cnt+1;
+			}
+			else{
+				state=release;
+				cnt=0;
+				++i;
+			    }
 
-							if( cnt < sound_lasting[i] ){
-								cnt=cnt+1;
-							}else{
-							state=release;
-							cnt=0;
-							++i;
-							}
+			if(i == 5){
+				state=start;
+				i=0;
+				set_PWM(0);
+				}
 
-							if( i==5 ){
-							state=start;
-							i=0;
-							set_PWM( 0 );
-							}
-
-							break;
+			break;
 					
-		default: 
-							state=start;
-							break;
 		}
 
 }
