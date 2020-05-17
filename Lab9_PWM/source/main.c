@@ -54,92 +54,135 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-#define C4 261.63
-#define D4 293.66
-#define E4 329.63
-#define F4 349.23
-#define G4 392.00
-#define A4 440.00
-#define B4 493.88
-#define C5 523.25
+enum States {Start, WAIT, PLAY, DOWN, PAUSE, WAIT_2}state;
+double notes[18] = {220.00, 220.00, 220.00, 174.61, 261.63, 220.00, 174.61, 261.63, 220.00, 329.63, 329.63, 329.63, 349.23, 207.65, 174.61, 261.63, 220.00};
+char time[18] = {50, 50, 50, 37, 13, 50, 37, 13, 50, 50, 50, 50, 37, 13, 50, 37, 13, 50};
+unsigned char i = 0x00;
+unsigned char k = 0x00;
+unsigned char r = 0x00;
 
-double TETRIS[] = {E4, B4, C4, D4, C4, B4, A4, 
-					  A4, C4, E4, D4, C4, B4, C4,
-					  D4, E4, C4, A4, A4, D4, F4,
-					  A4, G4, F4, E4, C4, E4, D4,
-					  C4, B4, B4, C4, D4, E4, C4, A4, A4};
-
-unsigned char tempA, tempB;
-unsigned int noteCount;
-
-enum States {init, play_song, pause, wait} state;
-
-void noteTick(){
-	//transitions
-	switch(state){
-		case init:
-		tempB = 0x01;
-		state = wait;
-		break;
-		
-		case wait:
-		tempB = 0x02;
-		if(tempA == 0x01)
+void Tick()
+{
+	switch(state) //transitions
+	{
+		case Start:
 		{
-			noteCount = 1;
-			state = play_song;
+			state = WAIT;
+			break;
 		}
-		else
+		case WAIT:
 		{
-			set_PWM(0);
-			state = wait;
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = PLAY; break;
+			}
+			else
+			{
+				state = WAIT; break;
+			}
 		}
-		break;
 		
-		case play_song:
-		tempB = 0x04;
-		if(noteCount < 37)
+		case PLAY:
 		{
-			set_PWM(TETRIS[noteCount]);
-			noteCount++;
-			state = play_song;
+			if(i <= time[k])
+			{
+				state = PLAY; break;
+			}
+			else if(i > time[k])
+			{
+				++r;
+				state = DOWN;
+				break;
+			}
 		}
-		else
+		case DOWN:
 		{
-			noteCount = 0;
-			set_PWM(0);
-			state = wait;
+			if(r < 20)
+			{
+				++k;
+				state = PLAY;
+				break;
+			}
+			else if(r >= 20)
+			{
+				state = PAUSE; break;
+			}
 		}
-		break;
 		
-		case pause:
-		tempB = 0x08;
-		set_PWM(0);
-		state = play_song;
-		break;
-		
+		case PAUSE:
+		{
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = WAIT_2; break;
+			}
+			else
+			{
+				state = PAUSE; break;
+			}
+		}
+		case WAIT_2:
+		{
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = WAIT_2;
+				break;
+			}
+			else
+			{
+				state = WAIT;
+				break;
+			}
+		}
 		default:
-		state = wait;
-		break;
+			break;
 	}
-	PORTB = tempB;
+	switch(state) //state actions
+	{
+		case Start:
+			break;
+			
+		case WAIT:
+		{
+			i = 0;
+			k = 0;
+			r = 0;
+			break;
+		}
+		
+		case PLAY:
+		{
+			set_PWM(notes[k]);
+			++i;
+			break;
+		}
+		
+		case DOWN:
+		{
+			set_PWM(0); break;
+		}
+		
+		case PAUSE:
+			break;
+		default:
+			break;
+	}
 }
+
 
 int main(void)
 {
-	
 	DDRA = 0x00; PORTA = 0xFF;
 	DDRB = 0xFF; PORTB = 0x00;
-	state = init;
-	noteCount = 0;
-	TimerOn();
-	TimerSet(100);
 	PWM_on();
-	while(1)
-	{
-		tempA = ~PINA;
-		noteTick();
-		while(!TimerFlag);
-		TimerFlag = 0;
-	}
+	
+	TimerSet(50);
+	TimerOn();
+	state = Start;
+    while(1)
+    {
+		Tick();
+        while (!TimerFlag);
+        TimerFlag = 0;
+    }
 }
+
