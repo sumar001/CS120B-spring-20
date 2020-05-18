@@ -12,91 +12,198 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
+ 
+unsigned char Blink = 0x00;
+unsigned char Three = 0x00;
+unsigned char temp = 0x00;
+unsigned short count = 0x00;
+unsigned short cnt = 0x00;
 
-unsigned char threeLEDs = 0x00;
-unsigned char blinkingLED = 0x00;
-unsigned char tmpB = 0x00;
 
-enum threeStates{threeInit,first, second, third}threeState;
-void SM_Three_Tick(){
-	switch(threeState){ // Transitions
-		case threeInit:
-			threeState = first;
+enum Three_States {Start, LED_1, LED_2, LED_3} Three_state;
+void TickThree_LEDS()
+{
+	switch(Three_state) // Transitions
+	{
+		case Start:
+		{
+			Three_state = LED_1;
 			break;
-		case first:
-			threeState = second;
+		}
+		case LED_1:
+		{
+			if(cnt < 1000)
+			{
+				Three_state = LED_1;
+				++cnt;
+			}
+			else
+			{
+				Three_state = LED_2;
+				cnt = 0;
+			}
 			break;
-		case second:
-			threeState = third;
+		}
+		case LED_2:
+		{
+			if(cnt < 1000)
+			{
+				Three_state = LED_2;
+				++cnt;
+			}
+			else
+			{
+				Three_state = LED_3;
+				cnt = 0;
+			}
 			break;
-		case third:
-			threeState = first;
+		}
+		case LED_3:
+		{
+			if(cnt < 1000)
+			{
+				Three_state = LED_3;
+				++cnt;
+			}
+			else
+			{
+				Three_state = LED_1;
+				cnt = 0;
+			}
 			break;
+		}
+		default:
+			break;	
 	}
-	switch(threeState){ // State actions
-		case threeInit:
+	
+	switch(Three_state) // State Actions
+	{
+		case Start:
 			break;
-		case first:
-			threeLEDs = 0x01;
+		case LED_1:
+		{
+			Three = 0x01;
 			break;
-		case second:
-			threeLEDs = 0x02;
+		}
+		case LED_2:
+		{
+			Three = 0x02;
 			break;
-		case third:
-			threeLEDs = 0x04;
+		}
+		case LED_3:
+		{
+			Three = 0x04;
+			break;
+		}
+		default:
 			break;
 	}
 }
 
-enum singleStates{on, off}singleState;
-void SM_Single_Tick(){
-	switch(singleState){ // Transitions
-		case on:
-			singleState = off;
+enum Blinking_States{BL_Start, ON, OFF} BL_state;
+void TickBL()
+{
+	switch(BL_state) // Transitions
+	{
+		case BL_Start:
+		{
+			BL_state = ON;
 			break;
-		case off:
-			singleState = on;
+		}
+		case ON:
+		{
+			if(count < 1000)
+			{
+				BL_state = ON;
+				++count;
+			}
+			else
+			{
+				BL_state = OFF;
+				count = 0;
+			}
+			break;
+		}
+		case OFF:
+		{
+			if(count < 1000)
+			{
+				BL_state = OFF;
+				++count;
+			}
+			else
+			{
+				BL_state = ON;
+				count = 0;
+			}
+			break;
+		}
+		default:
 			break;
 	}
-	switch(singleState){ // State Actions
-		case on:
-			blinkingLED = 0x08;
+	switch(BL_state) // State Actions
+	{
+		case BL_Start:
 			break;
-		case off:
-			blinkingLED = 0x00;
+		case ON:
+		{
+			Blink = 0x08;
 			break;
-
+		}
+		case OFF:
+		{
+			Blink = 0x00;
+		}
+		default:
+			break;
 	}
 }
-enum opStates{output} opState;
-void SM_output(){
-	switch(opState){ // Transitions
-		case output:
-			break;
-	}
-	switch(opState){ // State actions
-		case output:
-			tmpB = threeLEDs | blinkingLED;
-			break;
-	}
 
+enum COMBINE_States{COM_Start, OUTPUT} Combine_State;
+void TickCOM()
+{
+	switch(Combine_State) // Transitions
+	{
+		case COM_Start:
+		{
+			Combine_State = OUTPUT;
+			break;
+		}
+		case OUTPUT:
+			break;
+		default:
+			break;
+	}
+	switch(Combine_State) // State Actions
+	{
+		case COM_Start:
+			break;
+		case OUTPUT:
+		{
+			temp = Blink | Three;
+			PORTB = temp;
+			break;
+		}
+	}
 }
-int main(void) {
-    /* Insert DDR and PORT initializations */
-      DDRB = 0xFF; PORTB = 0x00;
 
-	opState = output;
-	threeState = threeInit;
-	singleState = on;
-
-    /* Insert your solution below */
-    while (1) {
-	SM_Single_Tick();
-		SM_Three_Tick();
-		SM_output();
-		PORTB = tmpB;
-		while(!TimerFlag){}
-		TimerFlag = 0;
+int main(void)
+{
+	DDRB = 0xFF; PORTB = 0x00;
+	Three_state = Start;
+	BL_state = BL_Start;
+	Combine_State = COM_Start;
+	cnt = 0;
+	count = 0;
+	
+	TimerSet(1);
+	TimerOn();
+    while(1)
+    {
+		TickThree_LEDS();
+		TickBL();
+		TickCOM();
+        while (!TimerFlag);
+        TimerFlag = 0;
     }
-    return 1;
 }
