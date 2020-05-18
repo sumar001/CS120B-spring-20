@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *       Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #10  Exercise #1
+ *	Assignment: Lab #10  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -32,7 +32,7 @@ void Three_Tick()
 		}
 		case Led1:
 		{
-			if(i < 1000)
+			if(i < 300)
 			{
 				ThreeLEDsSM = Led1;
 				++i;
@@ -46,7 +46,7 @@ void Three_Tick()
 		}
 		case Led2:
 		{
-			if(i < 1000)
+			if(i < 300)
 			{
 				ThreeLEDsSM = Led2;
 				++i;
@@ -60,7 +60,7 @@ void Three_Tick()
 		}
 		case Led3:
 		{
-			if(i < 1000)
+			if(i < 300)
 			{
 				ThreeLEDsSM = Led3;
 				++i;
