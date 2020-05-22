@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *       Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #10  Exercise #3
+ *	Assignment: Lab #10  Exercise #4
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -19,9 +19,90 @@ unsigned char audio = 0x00;
 unsigned char blinkingLED = 0x00;
 unsigned char tmpB = 0x00; //combined value will be stored here which will be displayed on PORTB
 unsigned short i = 0x00 ;  //counter for ThreeLEDsDM
+unsigned char button = 0x01;
 unsigned short j = 0x00;  //counter for BlinkingLEDSM
 unsigned short cnt = 0x00;  //counter for Audio
 
+enum Button_States{BUT_Start, WAIT_2, UP, DOWN} state;
+void TickButton()
+{
+	switch(state)
+	{	// Transitions
+		case BUT_Start:
+		{
+			state = WAIT_2;
+			break;
+		}
+		case WAIT_2:
+		{
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = UP;
+				++button;
+				break;
+			}
+			else if((~PINA & 0x02) == 0x02)
+			{
+				state = DOWN;
+				if((button - 1) < 1)
+				{
+					button = 1;
+				}
+				else
+				{
+					--button;
+				}
+				break;
+			}
+			else
+			{
+				state = WAIT_2;
+				break;
+			}
+		}
+		case UP:
+		{
+			if((~PINA & 0x01) == 0x01)
+			{
+				state = UP;
+				break;
+			}
+			else
+			{
+				state = WAIT_2;
+				break;
+			}
+		}
+		case DOWN:
+		{
+			if((~PINA & 0x02) == 0x02)
+			{
+				state = DOWN;
+				break;
+			}
+			else
+			{
+				state = WAIT_2;
+				break;
+			}
+		}
+		default:
+			break;
+	}
+	switch(state)
+	{	// state actions
+		case BUT_Start:
+			break;
+		case WAIT_2:
+			break;
+		case UP:
+			break;
+		case DOWN:
+			break;
+		default:
+			break;
+	}
+}
 
 enum ThreeLED_States {Start, Led1, Led2, Led3} ThreeLEDsSM;
 void Three_Tick()
@@ -159,7 +240,7 @@ void Blink_Tick()
 enum Audio_State {a_Start, a_hold, a_off, a_on} a_state;
 void Audio_Tick() {
 
-		B = (~PINA & 0x04);
+//		B = (~PINA & 0x04);
 	switch(a_state) { //transitions
 
 		case a_Start:
@@ -256,12 +337,14 @@ int main(void)
 	BL_state = BL_Start;
 	a_state = a_Start;
 	CombineLED_state = display;  
+	state = BUT_Start;
 	
 	TimerSet(1);
 	TimerOn();
 
     while(1)
     {
+		TickButton();
 		Three_Tick();
 		Audio_Tick();
 		Blink_Tick();
