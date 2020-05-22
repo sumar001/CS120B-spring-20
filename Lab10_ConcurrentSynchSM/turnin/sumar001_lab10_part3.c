@@ -16,10 +16,11 @@
 unsigned char threeLEDs = 0x00;
 unsigned char B = 0x00; //button
 unsigned char audio = 0x00;
-//unsigned char blinkingLED = 0x00;
+unsigned char blinkingLED = 0x00;
 unsigned char tmpB = 0x00; //combined value will be stored here which will be displayed on PORTB
 unsigned short i = 0x00 ;  //counter for ThreeLEDsDM
 unsigned short j = 0x00;  //counter for BlinkingLEDSM
+unsigned short cnt = 0x00;  //counter for Audio
 
 
 enum ThreeLED_States {Start, Led1, Led2, Led3} ThreeLEDsSM;
@@ -98,7 +99,7 @@ void Three_Tick()
 	}
 }
 
-/*enum BlinkingLEDSM_States{BL_Start, off, on} BL_state;
+enum BlinkingLEDSM_States{BL_Start, off, on} BL_state;
 void Blink_Tick()
 {
 	switch(BL_state) // Transitions
@@ -153,76 +154,76 @@ void Blink_Tick()
 		}
 	}
 }
-*/
 
-enum Audio_State {Sp_Start, hold, off, on} a_state;
+
+enum Audio_State {a_Start, a_hold, a_off, a_on} a_state;
 void Audio_Tick() {
 
-		B = (PINA & 0x04);
+		B = (~PINA & 0x04);
 	switch(a_state) { //transitions
 
-		case Sp_Start:
-			a_state = hold;
-			j = 0;
+		case a_Start:
+			a_state = a_hold;
+			cnt = 0;
 			break;
 
 
-		case on:
-			if((j < 2) && B) {
-				a_state = on;
-				++j ;
+		case a_on:
+			if((cnt < 2) && B) {
+				a_state = a_on;
+				++cnt ;
 				break;
 			}
 			else if(B) {
-				a_state = off;
-				j = 0;
+				a_state = a_off;
+				cnt = 0;
 				break;
 			}
 			else {
-				a_state = hold;
+				a_state = a_hold;
 				break;
 			}
 
-		case off:
-			if((j < 2) && (B)) {
-				a_state = off;
-				++j ;
+		case a_off:
+			if((cnt < 2) && (B)) {
+				a_state = a_off;
+				++cnt ;
 				break;
 			}
 			else if(B) {
-				a_state = on;
-				j = 0;
+				a_state = a_on;
+				cnt = 0;
 				break;
 			}
 			else {
-				a_state = hold;
+				a_state = a_hold;
 				break;
 			}
 
-		case hold:
+		case a_hold:
 			if(B) {
-				a_state = on;
+				a_state = a_on;
 				break;
 			}
 			else {
-				a_state = hold;
+				a_state = a_hold;
 				break;
 			}
 	}
 
 	switch(a_state) { //state actions
 
-		case on:
-			audio = 0x08;
+		case a_on:
+			audio = 0x10;
 			break;
 
-		case off:
+		case a_off:
 			audio = 0x00;
 			break;
 
-		case hold:
+		case a_hold:
 			audio = 0x00;
-			j = 0x00;
+			cnt = 0x00;
 			break;
 		}
 }
@@ -239,7 +240,7 @@ void Combine_Tick()
 	{
 		case display:
 		{
-			tmpB = threeLEDs | audio;
+			tmpB = threeLEDs | blinkingLED | audio;
 			PORTB = tmpB;
 			break;
 		}
@@ -248,11 +249,12 @@ void Combine_Tick()
 
 int main(void)
 {
+	DDRA = 0x00; PORTA = 0xFF;
 	DDRB = 0xFF; PORTB = 0x00;
 
 	ThreeLEDsSM = Start;
-	//BL_state = BL_Start;
-	a_state = Sp_Start;
+	BL_state = BL_Start;
+	a_state = a_Start;
 	CombineLED_state = display;  
 	
 	TimerSet(1);
@@ -262,7 +264,7 @@ int main(void)
     {
 		Three_Tick();
 		Audio_Tick();
-		//Blink_Tick();
+		Blink_Tick();
 		Combine_Tick();
 
         while (!TimerFlag);
