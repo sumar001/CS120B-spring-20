@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *       Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #10  Exercise #3
+ *	Assignment: Lab #10  Exercise #4
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -17,11 +17,11 @@ unsigned char threeLEDs = 0x00;
 unsigned char B = 0x00; //button
 unsigned char audio = 0x00;
 unsigned char blinkingLED = 0x00;
+unsigned short button = 0x01;
 unsigned char tmpB = 0x00; //combined value will be stored here which will be displayed on PORTB
 unsigned short i = 0x00 ;  //counter for ThreeLEDsDM
 unsigned short j = 0x00;  //counter for BlinkingLEDSM
 unsigned short cnt = 0x00;  //counter for Audio
-unsigned short button = 0x01;
 
 enum ThreeLED_States {Start, Led1, Led2, Led3} ThreeLEDsSM;
 void Three_Tick()
@@ -169,7 +169,7 @@ void Audio_Tick() {
 
 
 		case a_on:
-			if((cnt < 2) && B) {
+			if((cnt < button) && B) {
 				a_state = a_on;
 				++cnt ;
 				break;
@@ -185,7 +185,7 @@ void Audio_Tick() {
 			}
 
 		case a_off:
-			if((cnt < 2) && (B)) {
+			if((cnt < button) && (B)) {
 				a_state = a_off;
 				++cnt ;
 				break;
@@ -224,31 +224,35 @@ void Audio_Tick() {
 		case a_hold:
 			audio = 0x00;
 			cnt = 0x00;
+			button = 1;
 			break;
 		}
 }
 
-enum Button_States{BUT_Start, WAIT_2, UP, DOWN} state;
-void TickButton()
+enum B_states{B_Start, hold_2, inc, dec} state;
+void B_Tick()
 {
+	unsigned char B0 = (~PINA & 0x01);
+	unsigned char B1 = (~PINA & 0x02);
+
 	switch(state)
 	{	// Transitions
-		case BUT_Start:
+		case B_Start:
 		{
-			state = WAIT_2;
+			state = hold_2;
 			break;
 		}
-		case WAIT_2:
+		case hold_2:
 		{
-			if((~PINA & 0x01) == 0x01)
+			if(B0 && !B1)
 			{
-				state = UP;
+				state = inc;
 				++button;
 				break;
 			}
-			else if((~PINA & 0x02) == 0x02)
+			else if(!B0 && B1)
 			{
-				state = DOWN;
+				state = dec;
 				if((button - 1) < 1)
 				{
 					button = 1;
@@ -261,50 +265,46 @@ void TickButton()
 			}
 			else
 			{
-				state = WAIT_2;
+				state = hold_2;
 				break;
 			}
 		}
-		case UP:
+		case inc:
 		{
-			if((~PINA & 0x01) == 0x01)
+			if(B0)
 			{
-				state = UP;
+				state = inc;
 				break;
 			}
 			else
 			{
-				state = WAIT_2;
+				state = hold_2;
 				break;
 			}
 		}
-		case DOWN:
+		case dec:
 		{
-			if((~PINA & 0x02) == 0x02)
+			if(B1)
 			{
-				state = DOWN;
+				state = dec;
 				break;
 			}
 			else
 			{
-				state = WAIT_2;
+				state = hold_2;
 				break;
 			}
 		}
-		default:
-			break;
 	}
 	switch(state)
 	{	// state actions
-		case BUT_Start:
+		case B_Start:
 			break;
-		case WAIT_2:
+		case hold_2:
 			break;
-		case UP:
+		case inc:
 			break;
-		case DOWN:
-			break;
-		default:
+		case dec:
 			break;
 	}
 }
@@ -337,15 +337,14 @@ int main(void)
 	BL_state = BL_Start;
 	a_state = a_Start;
 	CombineLED_state = display;  
-	state = BUT_Start;
+	state = B_Start;
 	
 	TimerSet(1);
 	TimerOn();
 
     while(1)
     {
-		TickButton();
-
+		B_Tick();
 		Three_Tick();
 		Audio_Tick();
 		Blink_Tick();
