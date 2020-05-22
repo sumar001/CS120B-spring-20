@@ -12,220 +12,110 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
- 
-unsigned char threeLEDs = 0x00;
-unsigned char B = 0x00; //button
-unsigned char audio = 0x00;
-unsigned char blinkingLED = 0x00;
-unsigned char tmpB = 0x00; //combined value will be stored here which will be displayed on PORTB
-unsigned short i = 0x00 ;  //counter for ThreeLEDsDM
-unsigned short j = 0x00;  //counter for BlinkingLEDSM
-unsigned short cnt = 0x00;  //counter for Audio
 
-
-enum ThreeLED_States {Start, Led1, Led2, Led3} ThreeLEDsSM;
-void Three_Tick()
-{
-	switch(ThreeLEDsSM) // Transitions
-	{
-		case Start:
-		{
-			ThreeLEDsSM = Led1;
+enum threeStates{threeInit,first, second, third}threeState;
+void SM_Three_Tick(){
+	switch(threeState){ // Transitions
+		case threeInit:
+			threeState = first;
 			break;
-		}
-		case Led1:
-		{
-			if(i < 300)
-			{
-				ThreeLEDsSM = Led1;
-				++i;
-			}
-			else
-			{
-				ThreeLEDsSM = Led2;
-				i = 0;
-			}
+		case first:
+			threeState = second;
 			break;
-		}
-		case Led2:
-		{
-			if(i < 300)
-			{
-				ThreeLEDsSM = Led2;
-				++i;
-			}
-			else
-			{
-				ThreeLEDsSM = Led3;
-				i = 0;
-			}
+		case second:
+			threeState = third;
 			break;
-		}
-		case Led3:
-		{
-			if(i < 300)
-			{
-				ThreeLEDsSM = Led3;
-				++i;
-			}
-			else
-			{
-				ThreeLEDsSM = Led1;
-				i = 0;
-			}
+		case third:
+			threeState = first;
 			break;
-		}
 	}
-	
-	switch(ThreeLEDsSM) // State Actions
-	{
-		case Start:
+	switch(threeState){ // State actions
+		case threeInit:
 			break;
-		case Led1:
-		{
+		case first:
 			threeLEDs = 0x01;
 			break;
-		}
-		case Led2:
-		{
+		case second:
 			threeLEDs = 0x02;
 			break;
-		}
-		case Led3:
-		{
+		case third:
 			threeLEDs = 0x04;
 			break;
-		}
 	}
 }
 
-enum BlinkingLEDSM_States{BL_Start, off, on} BL_state;
-void Blink_Tick()
-{
-	switch(BL_state) // Transitions
-	{
-		case BL_Start:
-		{
-			BL_state = on;
-			break;
-		}
+enum singleStates{on, off}singleState;
+void SM_Single_Tick(){
+	switch(singleState){ // Transitions
 		case on:
-		{
-			if(j < 1000)
-			{
-				BL_state = on;
-				++j;
-			}
-			else
-			{
-				BL_state = off;
-				j = 0;
-			}
+			singleState = off;
 			break;
-		}
 		case off:
-		{
-			if(j < 1000)
-			{
-				BL_state = off;
-				++j;
-			}
-			else
-			{
-				BL_state = on;
-				j = 0;
-			}
+			singleState = on;
 			break;
-		}
 	}
-	
-	switch(BL_state) // State Actions
-	{
-		case BL_Start:
-			break;
+	switch(singleState){ // State Actions
 		case on:
-		{
 			blinkingLED = 0x08;
 			break;
-		}
 		case off:
-		{
 			blinkingLED = 0x00;
-		}
+			break;
+
 	}
 }
-
-
-enum Audio_State {a_Start, a_hold, a_off, a_on} a_state;
-void Audio_Tick() {
-
-		B = (~PINA & 0x04);
-	switch(a_state) { //transitions
-
-		case a_Start:
-			a_state = a_hold;
-			cnt = 0;
+enum opStates{output} opState;
+void SM_output(){
+	switch(opState){ // Transitions
+		case output:
 			break;
-
-
-		case a_on:
-			if((cnt < 2) && B) {
-				a_state = a_on;
-				++cnt ;
-				break;
-			}
-			else if(B) {
-				a_state = a_off;
-				cnt = 0;
-				break;
-			}
-			else {
-				a_state = a_hold;
-				break;
-			}
-
-		case a_off:
-			if((cnt < 2) && (B)) {
-				a_state = a_off;
-				++cnt ;
-				break;
-			}
-			else if(B) {
-				a_state = a_on;
-				cnt = 0;
-				break;
-			}
-			else {
-				a_state = a_hold;
-				break;
-			}
-
-		case a_hold:
-			if(B) {
-				a_state = a_on;
-				break;
-			}
-			else {
-				a_state = a_hold;
-				break;
-			}
+	}
+	switch(opState){ // State actions
+		case output:
+			tmpB = threeLEDs | blinkingLED | soundOutput;
+			break;
 	}
 
-	switch(a_state) { //state actions
-
-		case a_on:
-			audio = 0x10;
+}
+enum bStates{wait, soundOn, soundOff} bState;
+void SM_sound(){
+	tmpA = ~PINA & 0x04;
+	switch(bState){ // Transitions
+		case wait:
+			if(tmpA){
+				bState = soundOn;
+			}
+			else{
+				bState = wait;
+			}
 			break;
-
-		case a_off:
-			audio = 0x00;
+		case soundOn:
+			if(tmpA){
+				bState = soundOff;
+			}
+			else{
+				bState = wait;
+			}
 			break;
-
-		case a_hold:
-			audio = 0x00;
-			cnt = 0x00;
+		case soundOff:
+			if(tmpA){
+				bState = soundOn;
+			}
+			else{
+				bState = wait;
+			}
+	}
+	switch(bState){ // State actions
+		case wait:
+			soundOutput = 0x00;
 			break;
-		}
+		case soundOn:
+			soundOutput = 0x10;
+			break;
+		case soundOff:
+			soundOutput = 0x00;
+			break;
+	}
 }
 
 enum freqStates{bwait, up, upWait, down, downWait} fstate;
@@ -285,54 +175,45 @@ void SM_Freq_Tick(){
 	}
 }
 
-enum CombineLEDsSM_States{display} CombineLED_state;
-void Combine_Tick()
-{
-	switch(CombineLED_state) // Transitions
-	{
-		case display:
-			break;
-	}
-	switch(CombineLED_state) // State Actions
-	{
-		case display:
-		{
-			tmpB = threeLEDs | blinkingLED | audio;
-			PORTB = tmpB;
-			break;
-		}
-	}
-}
-
 int main(void)
 {
-	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0xFF; PORTB = 0x00;
-
+	DDRA = 0x00; PORTA = 0xFF; // Set A to input and initialize to 0xFF
+	DDRB = 0xFF; PORTB = 0x00; // Set B to output and initialize to 0x00
+	//DDRC = 0xFF; PORTC = 0x00; // LCD data lines
+	//DDRD = 0xFF; PORTD = 0x00; // LCD control lines
+	unsigned long lelapsedTime = 0;
+	unsigned long selapsedTime = 0;
 	unsigned long soundTime = 0;
-	
-	ThreeLEDsSM = Start;
-	BL_state = BL_Start;
-	a_state = a_Start;
-	CombineLED_state = display;  
-	
-	TimerSet(1);
-	TimerOn();
+	unsigned long largePeriod = 1000;
+	unsigned long smallPeriod = 300;
+	const unsigned long TimerPeriod = 1;
 
-    while(1)
-    {
+	TimerSet(TimerPeriod);
+	TimerOn();
+	
+	opState = output;
+	threeState = threeInit;
+	singleState = on;
+	while(1){
+		if(lelapsedTime >= largePeriod){
+			SM_Single_Tick();
+			lelapsedTime = 0;
+		}
+		if(selapsedTime >= smallPeriod){
+			SM_Three_Tick();
+			selapsedTime = 0;
+		}
 		if(soundTime >= freqTime){
 			SM_sound();
 			soundTime = 0;
 		}
 		SM_Freq_Tick();
-
-		Three_Tick();
-		Audio_Tick();
-		Blink_Tick();
-		Combine_Tick();
-
-        while (!TimerFlag);
-        TimerFlag = 0;
-    }
-}
+		SM_output();
+		PORTB = tmpB;
+		while(!TimerFlag){}
+		TimerFlag = 0;
+		lelapsedTime += TimerPeriod;
+		selapsedTime += TimerPeriod;
+		soundTime += TimerPeriod;
+	}
+} 
