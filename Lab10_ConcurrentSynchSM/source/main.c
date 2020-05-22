@@ -12,166 +12,121 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
- 
-unsigned char threeLEDs = 0x00;
-unsigned char blinkingLED = 0x00;
-unsigned char tmpB = 0x00; //combined value will be stored here which will be displayed on PORTB
-unsigned short i = 0x00 ;  //counter for ThreeLEDsDM
-unsigned short j = 0x00;  //counter for BlinkingLEDSM
-unsigned char Speaker = 0x00;
 
-enum ThreeLED_States {Start, Led1, Led2, Led3} ThreeLEDsSM;
-void Three_Tick()
-{
-	switch(ThreeLEDsSM) // Transitions
-	{
-		case Start:
-		{
-			ThreeLEDsSM = Led1;
-			break;
-		}
-		case Led1:
-		{
-			if(i < 300)
-			{
-				ThreeLEDsSM = Led1;
-				++i;
-			}
-			else
-			{
-				ThreeLEDsSM = Led2;
-				i = 0;
-			}
-			break;
-		}
-		case Led2:
-		{
-			if(i < 300)
-			{
-				ThreeLEDsSM = Led2;
-				++i;
-			}
-			else
-			{
-				ThreeLEDsSM = Led3;
-				i = 0;
-			}
-			break;
-		}
-		case Led3:
-		{
-			if(i < 300)
-			{
-				ThreeLEDsSM = Led3;
-				++i;
-			}
-			else
-			{
-				ThreeLEDsSM = Led1;
-				i = 0;
-			}
-			break;
-		}
-	}
-	
-	switch(ThreeLEDsSM) // State Actions
-	{
-		case Start:
-			break;
-		case Led1:
-		{
-			threeLEDs = 0x01;
-			break;
-		}
-		case Led2:
-		{
-			threeLEDs = 0x02;
-			break;
-		}
-		case Led3:
-		{
-			threeLEDs = 0x04;
-			break;
-		}
-	}
-}
-
-enum BlinkingLEDSM_States{BL_Start, off, on} BL_state;
-void Blink_Tick()
-{
-	switch(BL_state) // Transitions
-	{
-		case BL_Start:
-		{
-			BL_state = on;
-			break;
-		}
-		case on:
-		{
-			if(j < 1000)
-			{
-				BL_state = on;
-				++j;
-			}
-			else
-			{
-				BL_state = off;
-				j = 0;
-			}
-			break;
-		}
-		case off:
-		{
-			if(j < 1000)
-			{
-				BL_state = off;
-				++j;
-			}
-			else
-			{
-				BL_state = on;
-				j = 0;
-			}
-			break;
-		}
-	}
-	
-	switch(BL_state) // State Actions
-	{
-		case BL_Start:
-			break;
-		case on:
-		{
-			blinkingLED = 0x08;
-			break;
-		}
-		case off:
-		{
-			blinkingLED = 0x00;
-		}
-	}
-}
-
-enum CombineLEDsSM_States{display} CombineLED_state;
-void Combine_Tick()
-{
-	switch(CombineLED_state) // Transitions
-	{
-		case display:
-			break;
-	}
-	switch(CombineLED_state) // State Actions
-	{
-		case display:
-		{
-			tmpB = threeLEDs | blinkingLED;
-			PORTB = tmpB;
-			break;
-		}
-	}
-}
-
+void TickThree_LEDS();
+void TickSpeaker();
+void TickCOM();
+enum Three_States {Start, LED_1, LED_2, LED_3} Three_state;
 enum Speaker_States{SPEAK_Start, ON_SWITCH, OFF_SWITCH, WAIT} Speaker_state;
+enum COMBINE_States{COM_Start, OUTPUT} Combine_State;
+unsigned char Speaker = 0x00;
+unsigned char Three = 0x00;
+unsigned char temp = 0x00;
+unsigned short count = 0x00;
+unsigned short cnt = 0x00;
+unsigned char button = 0x00;
+
+int main(void)
+{
+	DDRB = 0xFF; PORTB = 0x00;
+	DDRA = 0x00; PORTA = 0xFF;
+	
+	Three_state = Start;
+	Speaker_state = SPEAK_Start;
+	Combine_State = COM_Start;
+	cnt = 0;
+	count = 0;
+	
+	TimerSet(1);
+	TimerOn();
+    while(1)
+    {	
+		TickThree_LEDS();
+		TickSpeaker();
+		TickCOM();
+        while (!TimerFlag);
+        TimerFlag = 0;
+    }
+}
+
+void TickThree_LEDS()
+{
+	switch(Three_state) // Transitions
+	{
+		case Start:
+		{
+			Three_state = LED_1;
+			break;
+		}
+		case LED_1:
+		{
+			if(cnt < 300)
+			{
+				Three_state = LED_1;
+				++cnt;
+			}
+			else
+			{
+				Three_state = LED_2;
+				cnt = 0;
+			}
+			break;
+		}
+		case LED_2:
+		{
+			if(cnt < 300)
+			{
+				Three_state = LED_2;
+				++cnt;
+			}
+			else
+			{
+				Three_state = LED_3;
+				cnt = 0;
+			}
+			break;
+		}
+		case LED_3:
+		{
+			if(cnt < 300)
+			{
+				Three_state = LED_3;
+				++cnt;
+			}
+			else
+			{
+				Three_state = LED_1;
+				cnt = 0;
+			}
+			break;
+		}
+		default:
+			break;	
+	}
+	
+	switch(Three_state) // State Actions
+	{
+		case Start:
+			break;
+		case LED_1:
+		{
+			Three = 0x01;
+			break;
+		}
+		case LED_2:
+		{
+			Three = 0x02;
+			break;
+		}
+		case LED_3:
+		{
+			Three = 0x04;
+			break;
+		}
+		default:
+			break;
+	}
+}
 void TickSpeaker()
 {
 	switch(Speaker_state) // Transitions
@@ -262,24 +217,29 @@ void TickSpeaker()
 			break;
 	}
 }
-int main(void)
+void TickCOM()
 {
-	DDRB = 0xFF; PORTB = 0x00;
-
-	ThreeLEDsSM = Start;
-	BL_state = BL_Start;
-	CombineLED_state = display;  
-	
-	TimerSet(1);
-	TimerOn();
-
-    while(1)
-    {
-		Three_Tick();
-		Blink_Tick();
-		Combine_Tick();
-
-        while (!TimerFlag);
-        TimerFlag = 0;
-    }
-}
+	switch(Combine_State) // Transitions
+	{
+		case COM_Start:
+		{
+			Combine_State = OUTPUT;
+			break;
+		}
+		case OUTPUT:
+			break;
+		default:
+			break;
+	}
+	switch(Combine_State) // State Actions
+	{
+		case COM_Start:
+			break;
+		case OUTPUT:
+		{
+			temp = Speaker | Three;
+			PORTB = temp;
+			break;
+		}
+	}
+} 
