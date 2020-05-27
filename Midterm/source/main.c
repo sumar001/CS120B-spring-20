@@ -8,6 +8,13 @@
  *	code, is my own original work.
  */
 
+/*	Author: <your name>
+ *	Lab Section:
+ *  Exam #2
+ *
+ *	I acknowledge all content contained herein, excluding template or example
+ *	code, is my own original work.
+ */
 #include <avr/io.h>
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
@@ -15,19 +22,35 @@
 #include "timer.h"
 
 /* SM state declarations --- fill in as needed */
-typedef enum output_states { OInit, Ooutput } output_states;
-typedef enum read_states { RInit, Rread } read_states;
+typedef enum ping_states { PInit,                                           } ping_states;
+typedef enum detect_eq_states { DEQInit,                                    } detect_eq_states;
+typedef enum detect_max_amp_states { DMAInit,                               } detect_max_amp_states;
+typedef enum detect_zc_states { DZCInit,                                    } detect_zc_states;
+typedef enum transmit_states {TInit,                                        } transmit_states;
 
 /* shared variables --- fill in as needed */
-unsigned char PA;
+
+
+
+
 
 /* state variables --- do not alter */
-output_states output_state;
-read_states read_state;
+ping_states ping_state;
+detect_eq_states detect_eq_state;
+detect_max_amp_states detect_max_amp_state;
+detect_zc_states detect_zc_state;
+transmit_states transmit_state;
 
-/* SM definitions --- complete each task as a SM */
-#include "output.h"
-#include "read.h"
+/* SM definitions --- complete each task as a SM in the appropriate file.
+ * Alternatively, you can remove the #include statement and insert your
+ *   SM implementation directly. 
+ */
+#include "ping.h"
+#include "detect_eq.h"
+#include "detect_max_amp.h"
+#include "detect_zc.h"
+#include "transmit.h"
+
 
 /* main function --- do not alter */
 int main(void) {
@@ -40,12 +63,18 @@ int main(void) {
     TimerOn();
 
     // init state vars
-    output_state = OInit;
-    read_state = RInit;
+    ping_state = PInit;
+    detect_eq_state = DEQInit;
+    detect_max_amp_state = DMAInit;
+    detect_zc_state = DZCInit;
+    transmit_state = TInit;
 
     while (1) {
-        Read();
-        Output();
+        Ping();
+        Detect_EQ();
+        Detect_Max_Amp();
+        Detect_ZC();
+        Transmit();
         while (!TimerFlag) { }
         TimerFlag = 0;
     }
