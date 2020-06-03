@@ -18,31 +18,59 @@
 #include <stdio.h>
 //#include "io.c"
 #include "io.h"
-//#include "keypad.h"
 #include "scheduler.h"
+//#include "keypad.h"
 
 unsigned char tmpB = 0x00;
-const unsigned char phrase[67]={' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','C','S','1','2','0','B',' ','i','s',' ','L','e','g','e','n','d','.','.','.','w','a','i','t',' ','f','o','r',' ','i','t',' ','D','A','R','Y','!',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '};
 
 enum SM1_States{SM1_output};
-unsigned char cursorCounter = 1;
-
 
 int SMTick1(int state){
+	unsigned char x;
+	x = GetKeypadKey();
 	switch(state){
 		case SM1_output:
-		for(int j = 1; j <= 16; j++){
-			LCD_Cursor(j);
-			LCD_WriteData(phrase[cursorCounter+j-2]);
-			if(cursorCounter+j+1 == 69){
-				cursorCounter = 1;
+			switch (x) {
+				case '\0': break; // All 5 LEDs on
+				case '1': tmpB = 0x01;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break; // hex equivalent
+				case '2': tmpB = 0x02;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '3': tmpB = 0x03;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '4': tmpB = 0x04; 
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '5': tmpB = 0x05;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '6': tmpB = 0x06;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '7': tmpB = 0x07;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '8': tmpB = 0x08;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '9': tmpB = 0x09;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case 'A': tmpB = 0x0A;
+				LCD_Cursor(1); LCD_WriteData(tmpB + 0x37); break;
+				case 'B': tmpB = 0x0B;
+				LCD_Cursor(1); LCD_WriteData(tmpB + 0x37); break;
+				case 'C': tmpB = 0x0C;
+				LCD_Cursor(1); LCD_WriteData(tmpB + 0x37); break;
+				case 'D': tmpB = 0x0D;
+				LCD_Cursor(1); LCD_WriteData(tmpB + 0x37); break;
+				case '*': tmpB = 0x0E;
+				LCD_Cursor(1); LCD_WriteData(tmpB + 0x1C); break;
+				case '0': tmpB = 0x00;
+				LCD_Cursor(1); LCD_WriteData(tmpB + '0'); break;
+				case '#': tmpB = 0x0F;
+				LCD_Cursor(1); LCD_WriteData(tmpB + 0x14); break;
+				default: tmpB = 0x1B; break; // Should never occur. Middle LED off.
 			}
-		
+			state = SM1_output;
+			PORTB=tmpB;
+			break;
 		}
-		cursorCounter++;
-		
-	}
-	return state;
+		return state;
 }
 
 
@@ -55,7 +83,7 @@ int main()
 	DDRC = 0xF0; PORTC = 0x0F; // PC7..4 outputs init 0s, PC3..0 inputs init 1s
 	DDRD = 0xFF; PORTD = 0x00;
 	// Period for the tasks
-	unsigned long int SMTick1_calc = 300;
+	unsigned long int SMTick1_calc = 50;
 
 
 	//Calculating GCD
@@ -83,7 +111,7 @@ int main()
 	TimerSet(GCD);
 	TimerOn();
 	LCD_init();
-	LCD_ClearScreen();
+
 	unsigned short i; // Scheduler for-loop iterator
 	while(1) {
 		// Scheduler code
