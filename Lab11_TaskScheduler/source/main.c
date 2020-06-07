@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *       Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #11  Exercise #4
+ *	Assignment: Lab #11  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -18,80 +18,29 @@
 #include <stdio.h>
 //#include "io.c"
 #include "io.h"
+//#include "keypad.h"
 #include "scheduler.h"
-#include "keypad.h"
 
-unsigned char tmp = 0x00;
-unsigned char j = 1;
-
+unsigned char tmpB = 0x00;
+const unsigned char cstr[60]={' ',' ',' ',' ',' ',' ',' ',' ','C','S','1','2','0','B',' ','i','s',' ','L','e','g','e','n','d','.','.','.','w','a','i','t',' ','f','o','r',' ','i','t',' ','D','A','R','Y','!',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '};
 
 enum SM1_States{display};
-
-int Tick(int state){
-	unsigned char x;
-	x = GetKeypadKey();
+unsigned char cnt = 1;
+int LCDtick(int state){
 	switch(state){
 		case display:
-			switch (x) {
-				case '\0': 
-					break; 
-				case '1': tmp = 0x01;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '2': tmp = 0x02;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '3': tmp = 0x03;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '4': tmp = 0x04; 
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '5': tmp = 0x05;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '6': tmp = 0x06;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '7': tmp = 0x07;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '8': tmp = 0x08;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '9': tmp = 0x09;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case 'A': tmp = 0x0A;
-				LCD_Cursor(j); LCD_WriteData(tmp + 0x37); j++; 
-					  break;
-				case 'B': tmp = 0x0B;
-				LCD_Cursor(j); LCD_WriteData(tmp + 0x37); j++; 
-					  break;
-				case 'C': tmp = 0x0C;
-				LCD_Cursor(j); LCD_WriteData(tmp + 0x37); j++; 
-					  break;
-				case 'D': tmp = 0x0D;
-				LCD_Cursor(j); LCD_WriteData(tmp + 0x37); j++; 
-					  break;
-				case '*': tmp = 0x0E;
-				LCD_Cursor(j); LCD_WriteData(tmp + 0x1C); j++; 
-					  break;
-				case '0': tmp = 0x00;
-				LCD_Cursor(j); LCD_WriteData(tmp + '0'); j++; 
-					  break;
-				case '#': tmp = 0x0F;
-				LCD_Cursor(j); LCD_WriteData(tmp + 0x14); j++; 
-					  break;
+		for(int j = 1; j <= 16; j++){
+			LCD_Cursor(j);
+			LCD_WriteData(cstr[cnt+j-2]);
+			if(cnt+j+1 == 62){
+				cnt = 1;
 			}
-			if(j==17){
-				j=1;
-			}
-			state = display;
-			PORTB = tmp;
-			break;
+		
 		}
-		return state;
+		cnt++;
+		
+	}
+	return state;
 }
 
 
@@ -102,7 +51,7 @@ int main()
 	DDRC = 0xF0; PORTC = 0x0F; 
 	DDRD = 0xFF; PORTD = 0x00;
 	// Period for the tasks
-	unsigned long int Tick_calc = 200;
+	unsigned long int LCDtick_calc = 300;
 
 
 	//Calculating GCD
@@ -112,7 +61,7 @@ int main()
 	unsigned long int GCD = tmpGCD;
 
 	//Recalculate GCD periods for scheduler
-	unsigned long int Tick_period = Tick_calc;
+	unsigned long int LCDtick_period = LCDtick_calc;
 
 	//Declare an array of tasks
 	static task task1;
@@ -121,15 +70,16 @@ int main()
 
 	// Task 1
 	task1.state = 0;//Task initial state.
-	task1.period = Tick_period;//Task Period.
-	task1.elapsedTime = Tick_period;//Task current elapsed time.
-	task1.TickFct = &Tick;//Function pointer for the tick.
+	task1.period = LCDtick_period;//Task Period.
+	task1.elapsedTime = LCDtick_period;//Task current elapsed time.
+	task1.TickFct = &LCDtick;//Function pointer for the tick.
 
 
+	// Set the timer and turn it on
 	TimerSet(GCD);
 	TimerOn();
 	LCD_init();
-	LCD_DisplayString(1,"Congratulations");
+	LCD_ClearScreen();
 
 	unsigned short i; // Scheduler for-loop iterator
 	while(1) {
