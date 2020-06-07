@@ -19,108 +19,123 @@
 //#include "io.c"
 #include "io.h"
 #include "scheduler.h"
-//#include "keypad.h"
+#include "keypad.h"
 
- unsigned char symbol=0x00; //our shared variable from keypad task to lcd print task
-//unsigned char cursor_i=0;
+//--------Shared Variables----------------------------------------------------
+unsigned char pressed_char, curr_char;
+//--------End Shared Variables------------------------------------------------
 
-enum keypad_STATES {start} keypad_state;	
-int keypad_tick(int keypad_state){
-	unsigned char x = GetKeypadKey();
-	switch(keypad_state){
-		case start: 
-			keypad_state = start;
-			switch(x) {
-				case '\0': symbol = symbol; break;
-				case '1': symbol = 0x01; break;
-				case '2': symbol = 0x02; break;
-				case '3': symbol = 0x03; break;
-				case 'A': symbol = 0x0A; break;
-				case '4': symbol = 0x04; break;
-				case '5': symbol = 0x05; break;
-				case '6': symbol = 0x06; break;
-				case 'B': symbol = 0x0B; break;
-				case '7': symbol = 0x07; break;
-				case '8': symbol = 0x08; break;
-				case '9': symbol = 0x09; break;
-				case 'C': symbol = 0x0C; break;
-				case '*': symbol = 0x0E; break;
-				case '0': symbol = 0x00; break;
-				case '#': symbol = 0x0F; break;
-				case 'D': symbol = 0x0D; break;
-				default: symbol = 0x1B; break;
-			}
-			break;
-		
+//--------User defined FSMs---------------------------------------------------
+//Enumeration of states.
+enum SM1_States { KeyPress };
+enum SM2_States { LCD_W };
+
+// Monitors button connected to PA0. 
+// When button is pressed, shared variable "pause" is toggled.
+int SMTick1(int state) {
+
+	switch (state){
+		case KeyPress:
+			state = KeyPress;
+		break;
 		default:
-			keypad_state = start;
+			state = KeyPress;
+	}
+
+	switch (state){
+			case KeyPress:
+				pressed_char = GetKeypadKey();
+			break;
+			default:
+			break;
+		}
+	return state;
+}
+
+int SMTick2(int state){
+	switch(state){
+		case LCD_W:
+			state = LCD_W;
+		default:
+			state = LCD_W;
 			break;
 	}
-	return keypad_state;
-}
-enum LCD_STATES {PRINT} LCD_STATE;
-int Lcd_state_machine(LCD_STATE)
-{
-	switch(LCD_STATE)
-	{
-		case PRINT:
+	switch(state){
+		case LCD_W:
+			if(curr_char != pressed_char && pressed_char != '\0'){
 				LCD_Cursor(1);
-				LCD_WriteData(symbol+'0');
-// 				if (cursor_i>32){
-// 					cursor_i=0;
-// 				}else{
-// 					++cursor_i;
-// 				}
-			break;
-		default:break;
-
+				LCD_WriteData(pressed_char);
+				curr_char = pressed_char;
+			}
+		default:
+		break;
 	}
-	return LCD_STATE;
+
+	return state;
 }
 
-//setting up global task variables
-task task1, task2;
+// --------END User defined FSMs-----------------------------------------------
 
-int main(void)
+// Implement scheduler code from PES.
+int main()
 {
-	DDRA = 0xF0; PORTA = 0x0F; //our keypad port
-	DDRB = 0xFF; PORTB = 0x00; //our test port to see which state we are currently at
-	DDRC = 0xFF; PORTC = 0x00; //lcd port
-	DDRD = 0xFF; PORTD = 0x00; 
-	
-	task *tasks[] = {&task1, &task2};
-	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
-
-	
-	//Task 1
-	task1.state = start;
-	task1.period = 50;
-	task1.elapsedTime = task1.period;
-	task1.TickFct = &keypad_tick;
-
-	//Task2
-	task2.state = PRINT;
-	task2.period = 50;
-	task2.elapsedTime = task2.period;
-	task2.TickFct = &Lcd_state_machine;
-	
-	TimerSet(50);
-	TimerOn();
+	// Set Data Direction Registers
+	DDRD = 0xFF; PORTD = 0x00;
+	DDRA = 0xFF; PORTD = 0x00;
+	DDRB = 0xFF; PORTB = 0x00;
+	DDRC = 0xF0; PORTC = 0x0F;
+	// . . . etc
 	LCD_init();
 
-	
-	unsigned short i;
-    while (1) 
-    {
-		for(i = 0; i < numTasks; i++){
-			if(tasks[i]->elapsedTime == tasks[i]->period){
+	// Period for the tasks
+	unsigned long int SMTick1_calc = 50;
+
+	//Calculating GCD
+	unsigned long int tmpGCD = 1;
+
+	//Greatest common divisor for all tasks or smallest time unit for tasks.
+	unsigned long int GCD = tmpGCD;
+
+	//Recalculate GCD periods for scheduler
+	unsigned long int SMTick1_period = SMTick1_calc/GCD;
+
+	//Declare an array of tasks 
+	static task task1,task2;
+	task *tasks[] = { &task1, &task2};
+	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
+
+	// Task 1
+	task1.state = -1;//Task initial state.
+	task1.period = SMTick1_period;//Task Period.
+	task1.elapsedTime = SMTick1_period;//Task current elapsed time.
+	task1.TickFct = &SMTick1;//Function pointer for the tick.
+
+	task2.state = -1;
+	task2.period = SMTick1_period;
+	task2.elapsedTime = SMTick1_period;
+	task2.TickFct = &SMTick2;
+
+	// Set the timer and turn it on
+	TimerSet(GCD);
+	TimerOn();
+
+	unsigned short i; // Scheduler for-loop iterator
+	while(1) {
+		// Scheduler code
+		for ( i = 0; i < numTasks; i++ ) {
+			// Task is ready to tick
+			if ( tasks[i]->elapsedTime == tasks[i]->period ) {
+				// Setting next state for task
 				tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
+				// Reset the elapsed time for next tick.
 				tasks[i]->elapsedTime = 0;
 			}
-			tasks[i]->elapsedTime += tasks[i]->period;
+			tasks[i]->elapsedTime += 1;
 		}
 		while(!TimerFlag);
 		TimerFlag = 0;
 	}
+
+	// Error: Program should not exit!
 	return 0;
 }
