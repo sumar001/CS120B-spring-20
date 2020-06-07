@@ -21,119 +21,120 @@
 #include "scheduler.h"
 #include "keypad.h"
 
-unsigned char symbol=0x00; //our shared variable from keypad task to lcd print task
-unsigned char cursor_i=0;
-unsigned char is_hold_state=0;
+unsigned char tmpB = 0x00;
+unsigned char cursorCount = 1;
 
-enum keypad_STATES {start} keypad_state;	
-int keypad_tick(int keypad_state){
-	unsigned char x = GetKeypadKey();
-	switch(keypad_state){
-		case start: 
-			keypad_state = start;
-			switch(x) {
-				case '\0': symbol = symbol; is_hold_state=0; break;
-				case '1': symbol = 0x01; is_hold_state=1; break;
-				case '2': symbol = 0x02; is_hold_state=1; break;
-				case '3': symbol = 0x03; is_hold_state=1; break;
-				case 'A': symbol = 0x0A; is_hold_state=1; break;
-				case '4': symbol = 0x04; is_hold_state=1; break;
-				case '5': symbol = 0x05; is_hold_state=1; break;
-				case '6': symbol = 0x06; is_hold_state=1; break;
-				case 'B': symbol = 0x0B; is_hold_state=1; break;
-				case '7': symbol = 0x07; is_hold_state=1; break;
-				case '8': symbol = 0x08; is_hold_state=1; break;
-				case '9': symbol = 0x09; is_hold_state=1; break;
-				case 'C': symbol = 0x0C; is_hold_state=1; break;
-				case '*': symbol = 0x0E; is_hold_state=1; break;
-				case '0': symbol = 0x00; is_hold_state=1; break;
-				case '#': symbol = 0x0F; is_hold_state=1; break;
-				case 'D': symbol = 0x0D; is_hold_state=1; break;
-				default: symbol = 0x1B; break;
+
+enum SM1_States{SM1_output};
+
+int SMTick1(int state){
+	unsigned char x;
+	x = GetKeypadKey();
+	switch(state){
+		case SM1_output:
+			switch (x) {
+				case '\0': break; // All 5 LEDs on
+				case '1': tmpB = 0x01;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break; // hex equivalent
+				case '2': tmpB = 0x02;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '3': tmpB = 0x03;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '4': tmpB = 0x04; 
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '5': tmpB = 0x05;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '6': tmpB = 0x06;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '7': tmpB = 0x07;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '8': tmpB = 0x08;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '9': tmpB = 0x09;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case 'A': tmpB = 0x0A;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + 0x37); cursorCount++; break;
+				case 'B': tmpB = 0x0B;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + 0x37); cursorCount++; break;
+				case 'C': tmpB = 0x0C;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + 0x37); cursorCount++; break;
+				case 'D': tmpB = 0x0D;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + 0x37); cursorCount++; break;
+				case '*': tmpB = 0x0E;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + 0x1C); cursorCount++; break;
+				case '0': tmpB = 0x00;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + '0'); cursorCount++; break;
+				case '#': tmpB = 0x0F;
+				LCD_Cursor(cursorCount); LCD_WriteData(tmpB + 0x14); cursorCount++; break;
+				default: tmpB = 0x1B; break; // Should never occur. Middle LED off.
 			}
+			if(cursorCount==17){
+				cursorCount=1;
+			}
+			state = SM1_output;
+			PORTB=tmpB;
 			break;
-		
-		default:
-			keypad_state = start;
-			break;
-	}
-	return keypad_state;
-}
-enum LCD_STATES {PRINT, HOLD} LCD_STATE;
-
-
-int Lcd_state_machine(LCD_STATE)
-{
-	switch(LCD_STATE)
-	{
-		case PRINT:
-
-				if (cursor_i>32){
-					cursor_i=0;
-					LCD_STATE=PRINT;
-				}else{
-					LCD_Cursor(cursor_i);
-					LCD_WriteData(symbol+'0');
-					++cursor_i;
-					is_hold_state=0;
-					LCD_STATE=HOLD;
-				}
-			break;
-			
-		case HOLD:	LCD_STATE=(is_hold_state==0) ? HOLD : PRINT;
-					
-					
-		default:break;
-
-	}
-	return LCD_STATE;
+		}
+		return state;
 }
 
-//setting up global task variables
-task task1, task2;
 
-int main(void)
+int main()
 {
-	DDRA = 0xF0; PORTA = 0x0F; //our keypad port
-	DDRB = 0xFF; PORTB = 0x00; //our test port to see which state we are currently at
-	DDRC = 0xFF; PORTC = 0x00; //lcd port
-	DDRD = 0xFF; PORTD = 0x00; 
-	
-	task *tasks[] = {&task1, &task2};
+	// Set Data Direction Registers
+	// Buttons PORTA[0-7], set AVR PORTA to pull down logic
+	DDRA = 0xFF; PORTA = 0x00;
+	DDRB = 0xFF; PORTB = 0x00;
+	DDRC = 0xF0; PORTC = 0x0F; // PC7..4 outputs init 0s, PC3..0 inputs init 1s
+	DDRD = 0xFF; PORTD = 0x00;
+	// Period for the tasks
+	unsigned long int SMTick1_calc = 50;
+
+
+	//Calculating GCD
+	unsigned long int tmpGCD = 1;
+
+	//Greatest common divisor for all tasks or smallest time unit for tasks.
+	unsigned long int GCD = tmpGCD;
+
+	//Recalculate GCD periods for scheduler
+	unsigned long int SMTick1_period = SMTick1_calc;
+
+	//Declare an array of tasks
+	static task task1;
+	task *tasks[] = { &task1};
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
-	
-	//Task 1
-	task1.state = start;
-	task1.period = 50;
-	task1.elapsedTime = task1.period;
-	task1.TickFct = &keypad_tick;
+	// Task 1
+	task1.state = 0;//Task initial state.
+	task1.period = SMTick1_period;//Task Period.
+	task1.elapsedTime = SMTick1_period;//Task current elapsed time.
+	task1.TickFct = &SMTick1;//Function pointer for the tick.
 
-	//Task2
-	task2.state = PRINT;
-	task2.period = 50;
-	task2.elapsedTime = task2.period;
-	task2.TickFct = &Lcd_state_machine;
-	
-	TimerSet(200);
+
+	// Set the timer and turn it on
+	TimerSet(GCD);
 	TimerOn();
 	LCD_init();
-	LCD_DisplayString(1, "Congraduation!");
-	LCD_Cursor(1);
+	LCD_DisplayString(1,"Congratulations");
 
-	
-	unsigned short i;
-    while (1) 
-    {
-		for(i = 0; i < numTasks; i++){
-			if(tasks[i]->elapsedTime == tasks[i]->period){
+	unsigned short i; // Scheduler for-loop iterator
+	while(1) {
+		// Scheduler code
+		for ( i = 0; i < numTasks; i++ ) {
+			// Task is ready to tick
+			if ( tasks[i]->elapsedTime >= tasks[i]->period ) {
+				// Setting next state for task
 				tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
+				// Reset the elapsed time for next tick.
 				tasks[i]->elapsedTime = 0;
 			}
-			tasks[i]->elapsedTime += tasks[i]->period;
+			tasks[i]->elapsedTime += 1;
 		}
 		while(!TimerFlag);
 		TimerFlag = 0;
 	}
+
+	// Error: Program should not exit!
 	return 0;
 }
