@@ -1,7 +1,7 @@
 /*	Author: sumar001
  *       Partner(s) Name: 
  *	Lab Section: 25
- *	Assignment: Lab #11  Exercise #2
+ *	Assignment: Lab #11  Exercise #1
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -21,47 +21,56 @@
 //#include "keypad.h"
 #include "scheduler.h"
 
-unsigned char tmpB = 0x00;
-const unsigned char cstr[60]={' ',' ',' ',' ',' ',' ',' ',' ','C','S','1','2','0','B',' ','i','s',' ','L','e','g','e','n','d','.','.','.','w','a','i','t',' ','f','o','r',' ','i','t',' ','D','A','R','Y','!',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '};
-
-enum SM1_States{display};
-unsigned char cnt = 1;
-int LCDtick(int state){
-	switch(state){
-		case display:
-		for(int j = 1; j <= 16; j++){
-			LCD_Cursor(j);
-			LCD_WriteData(cstr[cnt+j-2]);
-			if(cnt+j+1 == 62){
-				cnt = 1;
+enum SMTask1_States {start} state;
+int Tick_keypad(int state) {
+	unsigned char x;
+	x = GetKeypadKey();
+	switch(state) {
+		case start:
+		   switch(x) {
+			case '\0' : PORTB = 0x1F; break; //All 5 Leds on
+			case '1' : PORTB = 0x01; break;
+			case '2' : PORTB = 0x02; break;
+			case '3' : PORTB = 0x03; break;
+			case '4' : PORTB = 0x04; break;
+			case '5' : PORTB = 0x05; break;
+			case '6' : PORTB = 0x06; break;
+			case '7' : PORTB = 0x07; break;
+			case '8' : PORTB = 0x08; break;
+			case '9' : PORTB = 0x09; break;
+			case 'A' : PORTB = 0x0A; break;
+			case 'B' : PORTB = 0x0B; break;
+			case 'C' : PORTB = 0x0C; break;
+			case 'D' : PORTB = 0x0D; break;
+			case '*' : PORTB = 0x0E; break;
+			case '0' : PORTB = 0x00; break;
+			case '#' : PORTB = 0x0F; break;
+			default: PORTB = 0x1B; break;
 			}
-		
-		}
-		cnt++;
-		
-	}
+		state = start;
+		break;
+	     }
 	return state;
-}
+       }
 
 
-int main()
-{
-	DDRA = 0xFF; PORTA = 0x00;
+int main(void) {
+   	unsigned char x;
+     /* Insert DDR and PORT initializations */
 	DDRB = 0xFF; PORTB = 0x00;
-	DDRC = 0xF0; PORTC = 0x0F; 
-	DDRD = 0xFF; PORTD = 0x00;
-	// Period for the tasks
-	unsigned long int LCDtick_calc = 300;
+	DDRC = 0xF0; PORTC = 0x0F;
 
+    /* Insert your solution below */
+	 unsigned long int Tick_keypad_calc = 20;
 
 	//Calculating GCD
-	unsigned long int tmpGCD = 1;
+	unsigned long int tmpGCD = 10;
 
 	//Greatest common divisor for all tasks or smallest time unit for tasks.
 	unsigned long int GCD = tmpGCD;
 
 	//Recalculate GCD periods for scheduler
-	unsigned long int LCDtick_period = LCDtick_calc;
+	unsigned long int Tick_keypad_period = Tick_keypad_calc/GCD;
 
 	//Declare an array of tasks
 	static task task1;
@@ -70,23 +79,21 @@ int main()
 
 	// Task 1
 	task1.state = 0;//Task initial state.
-	task1.period = LCDtick_period;//Task Period.
-	task1.elapsedTime = LCDtick_period;//Task current elapsed time.
-	task1.TickFct = &LCDtick;//Function pointer for the tick.
+	task1.period = Tick_keypad_period;//Task Period.
+	task1.elapsedTime = Tick_keypad_period;//Task current elapsed time.
+	task1.TickFct = &Tick_keypad;//Function pointer for the tick.
 
 
 	// Set the timer and turn it on
 	TimerSet(GCD);
 	TimerOn();
-	LCD_init();
-	LCD_ClearScreen();
 
 	unsigned short i; // Scheduler for-loop iterator
 	while(1) {
 		// Scheduler code
 		for ( i = 0; i < numTasks; i++ ) {
 			// Task is ready to tick
-			if ( tasks[i]->elapsedTime >= tasks[i]->period ) {
+			if ( tasks[i]->elapsedTime == tasks[i]->period ) {
 				// Setting next state for task
 				tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
 				// Reset the elapsed time for next tick.
@@ -97,6 +104,6 @@ int main()
 		while(!TimerFlag);
 		TimerFlag = 0;
 	}
-
-	return 0;
 }
+	
+"
